@@ -1,0 +1,361 @@
+---
+title: "Entrega de ejercicios Tema 1"
+author: "Blanca Cano Camarero"
+date: \today
+format: pdf
+editor: visual
+toc: true
+toc-depth: 3
+lang: es
+---
+\newpage
+## Ejercicio 1 
+
+El paquete `gapminder` contiene un fichero de datos de población, esperanza de vida y renta per cápita de los países del mundo entre 1952 y 2007. Instala el paquete y lleva a cabo los siguientes gráficos:
+
+```{r}
+#package installation 
+# uncomment to install
+#install.packages("gapminder")
+#install.packages("dplyr")
+library(gapminder)
+library(dplyr)
+library(tidyverse)
+library(ggtext) #markdown titles
+colnames(gapminder)
+```
+
+
+### Apartado 1.1 
+Un histograma de la esperanza de vida en 2007 de los países de Europa.
+
+```{r}
+life_countries <- gapminder %>%
+    filter(
+      continent == "Europe",
+      year == 2007
+    ) %>%
+  select(country, lifeExp) 
+# In order to know the number of bin calc maximum and minimum
+# one bin per year
+number_of_bin <- ceiling(
+  max( life_countries$lifeExp) 
+  -
+    min( life_countries$lifeExp)
+) 
+
+ggplot(data=life_countries) +
+  geom_histogram(aes(x=lifeExp,  y=..density..),
+                 fill='lightblue',
+                 col='black',
+                 bins=15) + 
+                 labs(x="Esperanza de vida",
+                      y="Frecuencia") +
+  ggtitle("<span style='font-size: 11pt;'>
+  **Grafica 1.1**:
+  Esperanza de vida en los países de europa
+  </font>") +
+  theme(plot.title = element_markdown())
+                 
+```
+
+### Apartado 1.2 
+
+Diagramas de cajas con las esperanzas de vidas de cada continente en el año 1952. 
+
+
+```{r}
+filtered <- gapminder %>%
+    filter(
+      year == 1952
+    ) %>%
+  select(continent, lifeExp) 
+
+ggplot(filtered, aes(x = continent, y = lifeExp )) +
+  geom_boxplot() +
+  labs(y="Esperanza de vida", 
+       x= "Continente") +
+  ggtitle("<span style='font-size: 10pt;'>
+  **Grafica 1.2**:
+  Esperanza de vida por continente en 1952
+  </font>") +
+  theme(plot.title = element_markdown())
+  
+```
+
+### Apartado 1.3  
+
+Un diagrama de dispersión de la renta per cápita y la esperanza de vida de cada país en el año 2007.
+
+```{r}
+filtered <- gapminder %>%
+    filter(
+      year == 2007
+    ) %>%
+  select(gdpPercap, lifeExp) 
+
+ggplot(filtered) +
+  geom_point(aes(x = gdpPercap, y = lifeExp), col = 'blue')+
+  labs(y="Esperanza de vida", 
+       x= "Renta per cápita") +
+  ggtitle("<span style='font-size: 9pt;'>
+  **Grafica 1.3**:
+   Dispersión de la renta per cápida y esperanza de vida en 2005
+  </font>") +
+  theme(plot.title = element_markdown())
+  
+```
+### Apartado 1.4 
+
+Mejora el gráfico anterior representando cada punto con un color diferente en función del continente al que pertenece cada país y representando la renta per cápita en una escala logarítmica. 
+
+```{r}
+filtered <- gapminder %>%
+    filter(
+      year == 2007
+    ) %>%
+  select(gdpPercap, lifeExp, continent) 
+
+ggplot(filtered) +
+  geom_point(aes(x = gdpPercap, y = lifeExp, col = continent))+
+  scale_x_log10() +
+  labs(y="Esperanza de vida", 
+       x= "Renta per cápita",
+       col="Continente") +
+  ggtitle("<span style='font-size: 7pt;'>
+  **Grafica 1.4**:
+   Dispersión de la renta per cápida y esperanza de vida en 2005
+   escala logarítmica
+  </font>") +
+  theme(plot.title = element_markdown())
+  
+```
+
+\newpage
+
+## Ejercicio 3
+
+Se desea estimar la prevalencia $p$ de cierto trastorno gástrico. Está relacionada con la edad y por tanto se divide la población en dos estratos:
+
+1. menores de 30 años que son un 40% de la población.
+
+2. mayores de 60 años que son un 60% de la población.
+
+Se toma una muestra de 60 del estrato (1) y otra de 90 del (2). Teniendo entonces una muestra estratificada de tamaño $n=150$ individuos.
+
+Para cada uno de ellos se observa si tienen o no la enfermedad.
+
+#### Abstracción del problema 3
+
+Notemos que para ambos estratos estamos ante una distribución binomial, donde Sea $X \sim Bin(60, p_1)$ la variable aleatorio que indica el número de individuos enfermos dentro del estrato (1) y $Y \sim Bin(90, p_2)$ la variable aleatorio que indica el número de individuos enfermos dentro del estrato (2).
+
+Ambas variables son independientes.
+
+### Apartado 3.1
+
+A partir de $\hat{p_i}$ la proporción muestral de inividuos enfermos en estrato $i \in \{1,2\}$ formula un estimador insesgado de la prevalencia de $p$ en la población.
+
+#### Solución propuesta apartado 3.1
+
+Comenzaremos aprenciando que $\hat{p_i}$ para todo $i \in \{1,2\}$ es un estimador insesgado, ya que la media lo es:
+
+Sea $W \sim Bernoulli(p_i)$ donde $\hat p_i = n_i^{-1} \sum W_i = \bar W$
+
+$$E\bar{W} = E\left[ n^{-1} \sum_{i=1}^n W_i \right]= n^{-1} \sum_{i=1}^n EW_i = p_i.$$
+
+Es decir que para todo $i \in \{1,2\}$
+
+$$
+\tag{3.1}
+  E\hat{p}_1 = p_1 \text{ y } E\hat{p}_2 = p_2.
+$$
+
+Además por cómo está distribuida la población se tiene que
+
+$$
+\tag{3.2}
+  p = 0.4 {p_1} + 0.6 {p_2}.
+$$
+
+Proponemos por tanto como estimador a $T$, definido como: 
+
+$$
+\tag{3.3}
+T(X,Y)=0.4 \hat p_1 + 0.6\hat p_2.
+$$
+
+veamos que (3.3) es insesgado:
+
+$$
+\begin{split}
+E_{X,Y}T
+&= E_{X,Y}[0.4 \hat{p}_1 + 0.6\hat{p}_2]
+\\
+&= 
+0.4 E_{X,Y}[\hat{p}_1] + 0.6 E_{X,Y}[\hat{p}_2]
+\\
+&= 0.4 p_1 + 0.6 p_2 
+\\
+&
+= p.
+\end{split}
+$$
+
+Donde la última igualdad se debe a (3.2).
+
+Acabamos de probar por tanto que $T$ es insesgado.
+
+### Apartado 3.2
+
+En función de $p_1$ y $p_2$ calcula la varianza del estimador $T$.
+
+#### Solución propuesta apartado 3.
+
+Tengamos presente que X e Y son dos variables aleatorias independientes.
+
+Y que además por ser
+
+Por tanto
+
+$$
+\tag{3.4}
+\begin{split}
+Var(T)
+&= 
+Var(0.4 \hat{p}_1 + 0.6\hat{p}_2)
+\\
+&
+= 
+(0.4)^2 Var(\hat{p}_1) 
++ 
+(0.6)^2Var(\hat{p}_2)
+\end{split}
+$$
+
+Donde para cada $i \in \{1,2\}$
+
+$$
+Var(\hat p_i)
+= E[(\hat p_i - Ep_i)^2]
+= E[(\hat p_i - p)^2 ]
+$$ 
+
+Que por tratarse de una binomial será de la forma
+
+$$
+\tag{3.5}
+Var(\hat p_i) = n_i p_i(1-p_i). 
+$$
+
+Si lo pensamos como el promedio de la suma de Bernuillis:
+
+$$
+Var
+\left(
+      n_1^{-1} \sum_{i=1}^{n_1} X_i
+\right)
+= 
+n_1^{-2} \sum_{i=1}^{n_1} Var(X_i)
+= n_1^{-2} n_1 p_1(1-p_1)
+$$
+
+sustituyendo (3.5) en (3.4) resulta:
+
+$$
+\begin{split}
+Var(T)&= 
+0.16 n_1 p_1 (1-p_1) 
++ 
+0.36 n_2 p_2 (1-p_2)
+\\
+&=
+ 9.6 p_1 (1-p_1)
++
+ 32.4 p_2 (1-p_2)
+ \end{split}
+$$
+
+### Apartado 3.3
+
+Si $p_1 = p_2$ ¿Se incrementa la eficiencia por el hecho de usar una muestra estratificada en lugar de una muestra de vaiid de tamaño 150, extraída sin tener en cuenta los estratos.
+
+#### Solución propuesta apartado 3.3
+
+Si $p_1 = p_2$ entonces ambos tendrían la misma distribución $X \sim B(n_1, p_1)$ y $Y \sim B(n_2, p_1)$ y entonces 
+
+$$
+X + Y \sim B(n_1+n_2, p_1) = B(n, p_1)
+$$
+
+Por otra parte El parte si tenemos presente la igualdad (3.2) entonces se satiszace que:
+
+$$
+  p = 0.4p_1 + 0.6 p_2 =   0.4p_1 + 0.6 p_1 = p_1
+$$
+
+Por los que el modelo sin estratos sería de la forma \$\$ Z \sim B(n, p) = B(n,p) \$\$
+
+Por ser ambos modelos iguales no habría diferencia en estimar al estrato $X$ con $Z$.
+
+### Apartado 3.4
+
+Supongamos que diez de cada cien personas mayores de 30 años tiene la enfermedad ($p_2 = 0.1$). Representa gráficamente las varianzas de los estimadores correspondientes a la muestra n estratificada como función de $p_1$. ¿Para qué valores de $p_1$ es mejor utilizar muestreo estratificado en lugar de muestreo aleatorio simple?
+
+#### Solución propuesta apartado 3.
+
+```{r}
+library(latex2exp)
+f <- function (p_1, p_2=0.1){
+  return (9.6 *p_1*(1-p_1)+32.4 * p_2 * (1-p_2))
+}
+
+# Plotting
+x <- seq(0,1,0.01)
+plot(
+  x,
+  f(x),
+  type='l',
+  main="Variance distribution",
+  ylab = TeX(r'(Variance depending on $p_1$)'),
+  xlab = TeX(r"($p_1$)")
+)
+
+# when the minimum is found
+library(purrr)
+optimize(f, c(0,1))
+```
+
+## Ejercicio 7
+
+### Apartado 7.1
+
+#### Solución propuesta apartado 3.
+
+### Apartado 3.2
+
+#### Solución propuesta apartado 3.
+
+```{r}
+library(purrr)
+x <- c(1,2,3)
+f <- function (x, theta){
+  return (log(1 + (x-theta)^2))
+}
+
+l <- function (theta){
+  return (-sum(x, f(x,theta) ))
+}
+l
+
+optimize(l, c(-1000,1000))
+```
+
+```{r}
+x <- c(1,2,3)
+f <- function(x){
+  return (x+1)
+}
+l <-map(x, f)
+l
+
+```
