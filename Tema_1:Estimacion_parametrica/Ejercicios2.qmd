@@ -415,6 +415,10 @@ plot(
 ```
 Como podemos observar se ha encontrado un mínimo en $\theta^*= 9.842954$ relativamente próximo al valor real que es $\theta = 10$ que está próximo. 
 
+### Apartado 7.2
+Lleva a cabo algún experimento de simulación para aproximar la varianza del estimador de máxima verosimilitud.
+
+#### Solución al apartado 7.2
 
 El diseño del experimento consistirá en generar una matriz $n \times m$ de muestras, calcular el estimador verosimil para cada fila $\theta^{(i)}$ para cada $i \in \{1, \ldots, n\}$y con ellos se calculará la varianza estimada
 
