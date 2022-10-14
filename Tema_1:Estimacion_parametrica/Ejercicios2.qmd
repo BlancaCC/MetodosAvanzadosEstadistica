@@ -8,8 +8,10 @@ toc: true
 toc-depth: 3
 lang: es
 ---
+
 \newpage
-## Ejercicio 1 
+
+## Ejercicio 1
 
 El paquete `gapminder` contiene un fichero de datos de población, esperanza de vida y renta per cápita de los países del mundo entre 1952 y 2007. Instala el paquete y lleva a cabo los siguientes gráficos:
 
@@ -25,8 +27,8 @@ library(ggtext) #markdown titles
 colnames(gapminder)
 ```
 
+### Apartado 1.1
 
-### Apartado 1.1 
 Un histograma de la esperanza de vida en 2007 de los países de Europa.
 
 ```{r}
@@ -59,10 +61,9 @@ ggplot(data=life_countries) +
                  
 ```
 
-### Apartado 1.2 
+### Apartado 1.2
 
-Diagramas de cajas con las esperanzas de vidas de cada continente en el año 1952. 
-
+Diagramas de cajas con las esperanzas de vidas de cada continente en el año 1952.
 
 ```{r}
 filtered <- gapminder %>%
@@ -83,7 +84,7 @@ ggplot(filtered, aes(x = continent, y = lifeExp )) +
   
 ```
 
-### Apartado 1.3  
+### Apartado 1.3
 
 Un diagrama de dispersión de la renta per cápita y la esperanza de vida de cada país en el año 2007.
 
@@ -105,9 +106,10 @@ ggplot(filtered) +
   theme(plot.title = element_markdown())
   
 ```
-### Apartado 1.4 
 
-Mejora el gráfico anterior representando cada punto con un color diferente en función del continente al que pertenece cada país y representando la renta per cápita en una escala logarítmica. 
+### Apartado 1.4
+
+Mejora el gráfico anterior representando cada punto con un color diferente en función del continente al que pertenece cada país y representando la renta per cápita en una escala logarítmica.
 
 ```{r}
 filtered <- gapminder %>%
@@ -137,9 +139,9 @@ ggplot(filtered) +
 
 Se desea estimar la prevalencia $p$ de cierto trastorno gástrico. Está relacionada con la edad y por tanto se divide la población en dos estratos:
 
-1. menores de 30 años que son un 40% de la población.
+1.  menores de 30 años que son un 40% de la población.
 
-2. mayores de 60 años que son un 60% de la población.
+2.  mayores de 60 años que son un 60% de la población.
 
 Se toma una muestra de 60 del estrato (1) y otra de 90 del (2). Teniendo entonces una muestra estratificada de tamaño $n=150$ individuos.
 
@@ -177,7 +179,7 @@ $$
   p = 0.4 {p_1} + 0.6 {p_2}.
 $$
 
-Proponemos por tanto como estimador a $T$, definido como: 
+Proponemos por tanto como estimador a $T$, definido como:
 
 $$
 \tag{3.3}
@@ -238,7 +240,7 @@ $$
 Var(\hat p_i)
 = E[(\hat p_i - Ep_i)^2]
 = E[(\hat p_i - p)^2 ]
-$$ 
+$$
 
 Que por tratarse de una binomial será de la forma
 
@@ -281,7 +283,9 @@ Si $p_1 = p_2$ ¿Se incrementa la eficiencia por el hecho de usar una muestra es
 
 #### Solución propuesta apartado 3.3
 
-Si $p_1 = p_2$ entonces ambos tendrían la misma distribución $X \sim B(n_1, p_1)$ y $Y \sim B(n_2, p_1)$ y entonces 
+La clave está en cómo se indique, si se quiere saber la probabilidad de que $X$ jóvenes y $Y$ mayores estén enfermos.
+
+Si $p_1 = p_2$ entonces ambos tendrían la misma distribución $X \sim B(n_1, p_1)$ y $Y \sim B(n_2, p_1)$ y entonces
 
 $$
 X + Y \sim B(n_1+n_2, p_1) = B(n, p_1)
@@ -296,6 +300,11 @@ $$
 Por los que el modelo sin estratos sería de la forma \$\$ Z \sim B(n, p) = B(n,p) \$\$
 
 Por ser ambos modelos iguales no habría diferencia en estimar al estrato $X$ con $Z$.
+
+```{r}
+9.6+32.5 
+
+```
 
 ### Apartado 3.4
 
@@ -320,42 +329,114 @@ plot(
   xlab = TeX(r"($p_1$)")
 )
 
+# Diferencia del modelo
+
+differences <- function (p_1, p_2=0.1, n = 150){
+  return (-(9.6 *p_1*(1-p_1)+32.4 * p_2 * (1-p_2)) + n*p_1*(1-p_1) )
+}
+
+# Plotting
+x <- seq(0,1,0.01)
+plot(
+  x,
+  differences(x),
+  type='l',
+  main="Difference of the variance distribution",
+  ylab = TeX(r'($Var(X+Y)-Var(T(X,Y))$)'),
+  xlab = TeX(r"($p_1$)")
+)
+#Cuanto mayor ser sea |p1 - o.5| más renta
+
 # when the minimum is found
 library(purrr)
 optimize(f, c(0,1))
 ```
 
+\newpage
 ## Ejercicio 7
 
-### Apartado 7.1
-
-#### Solución propuesta apartado 3.
-
-### Apartado 3.2
-
-#### Solución propuesta apartado 3.
+El siguiente código genera una muestra de 100 datos de una distribución de Cauchy con parámetro de posición:
 
 ```{r}
-library(purrr)
-x <- c(1,2,3)
-f <- function (x, theta){
-  return (log(1 + (x-theta)^2))
-}
-
-l <- function (theta){
-  return (-sum(x, f(x,theta) ))
-}
-l
-
-optimize(l, c(-1000,1000))
+set.seed(123)
+theta <- 10
+n <- 100
+muestra <- rt(n, 1) + theta
 ```
 
-```{r}
-x <- c(1,2,3)
-f <- function(x){
-  return (x+1)
-}
-l <-map(x, f)
-l
+### Apartado 7.1
+Calcula el estimador de máxima verosimilitud de $\theta$. ¿Se parece al valor verdadero?
 
+#### Solución propuesta apartado 7.1
+
+Definimos la función a minimizar $L$ como 
+
+$$
+L(\theta) = 
+- \sum_{i=1}^n \log(1 + (x_i - \theta)^2)
+$$
+y la minimizaremos numéricamente con R:
+
+
+```{r}
+# Cambiamos el signo porque optimize solo encuentra mínimos
+# esta función es proporcional a la opuesta de de máximo similitud, su máximo será el estimador buscado
+l <- function (theta, sample){
+  return (sum( 
+              sapply(
+                sample, 
+                function(x) log(1 + (x-theta)^2)
+              )
+          )
+  )
+}
+
+# Calcula el mínimo de la función anterior dentro de un intervalo lo suficientemente grande
+get_stimator <- function(sample) {
+  stimator <-optimize(
+      function(theta) l(theta, sample),
+      c(-100,100)
+  )
+  return (
+    stimator$minimum
+  )
+}
+estimador <- get_stimator(muestra)
+cat('El estimador máximo verosimil encontrado es: ', estimador)
+
+dominious<-seq(-20, 20, 0.2)
+plot(
+  dominious,
+  sapply(dominious, function(x) l(x,muestra)), 
+  type='l'
+)
+
+
+```
+Como podemos observar se ha encontrado un mínimo en $\theta^*= 9.842954$ relativamente próximo al valor real que es $\theta = 10$ que está próximo. 
+
+
+El diseño del experimento consistirá en generar una matriz $n \times m$ de muestras, calcular el estimador verosimil para cada fila $\theta^{(i)}$ para cada $i \in \{1, \ldots, n\}$y con ellos se calculará la varianza estimada
+
+$$
+Var(\theta^*) =
+\sum_{i=1}^n \left(
+\theta^{(i)} - \theta^{*}
+\right)^2
+$$
+
+
+
+```{r}
+set.seed(123)
+m = 1000
+matriz_muestras <- rt(n, m) + theta
+estimador_por_filas <- sapply(matriz_muestras, get_stimator)
+varianza <- sum(
+  sapply(
+    estimador_por_filas,
+    function(x) (x-estimador)^2
+  )
+)
+cat("La varianza de nuestro estimador es ", varianza)
 ```
