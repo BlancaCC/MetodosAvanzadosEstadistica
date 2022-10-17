@@ -31,6 +31,8 @@ colnames(gapminder)
 
 Un histograma de la esperanza de vida en 2007 de los países de Europa.
 
+#### Solución 
+
 ```{r}
 life_countries <- gapminder %>%
     filter(
@@ -38,6 +40,12 @@ life_countries <- gapminder %>%
       year == 2007
     ) %>%
   select(country, lifeExp) 
+```
+
+Es necesario inicar cuántas barras van a ser necesaras en nuestro histograma, 
+para ello hemos optado por una barra por año, esto es calculado con 
+
+```{r}
 # In order to know the number of bin calc maximum and minimum
 # one bin per year
 number_of_bin <- ceiling(
@@ -45,7 +53,11 @@ number_of_bin <- ceiling(
   -
     min( life_countries$lifeExp)
 ) 
+```
 
+A continuación mostramos el código del histograma: 
+
+```{r}
 ggplot(data=life_countries) +
   geom_histogram(aes(x=lifeExp,  y=..density..),
                  fill='lightblue',
@@ -178,7 +190,9 @@ $$
   E\hat{p}_1 = p_1 \text{ y } E\hat{p}_2 = p_2.
 $$
 
-Además por cómo está distribuida la población se tiene que
+Además por cómo está distribuida la población se tiene que la prevalencia
+en la población total puede calcularse a partir de la prevalencia
+en cada uno de los estratos como: 
 
 $$
 \tag{3.2}
@@ -219,11 +233,7 @@ En función de $p_1$ y $p_2$ calcula la varianza del estimador $T$.
 
 #### Solución propuesta apartado 3.
 
-Tengamos presente que X e Y son dos variables aleatorias independientes.
-
-Y que además por ser
-
-Por tanto
+De la independencia de X e Y se deduce que:   
 
 $$
 \tag{3.4}
@@ -289,8 +299,10 @@ Var(\hat \theta_2).
 $$
 
 
-Si no tenemos en cuenta los estratos y  $p_1 = p_2$ entonces ambos tendrían la misma distribución, 
-es decir $X \sim B(n_1, p_1)$ y $Y \sim B(n_2, p_1)$ y por tanto la distribución seguiría una distribución 
+Si $p_1 = p_2$ entonces ambos tendrían la misma distribución, 
+es decir $X \sim B(n_1, p_1)$ y $Y \sim B(n_2, p_1)$. 
+Además la variable aleatoria que no tiene encuentra los estratos es la 
+suma de las dos, esto es:
 
 $$
 X + Y \sim B(n_1+n_2, p_1) = B(n, p_1).
@@ -354,7 +366,8 @@ Var(T)
  \end{split}
 $$
 
-Como podemos observar $(3.7)$ y $(3.8)$ dan lugar a la misma varianza, luego podemos afirmar que una no es más eficiente que otra. 
+Como podemos observar $(3.7)$ y $(3.8)$ dan lugar a la misma varianza, luego podemos afirmar que una no es más eficiente que otra
+en el caso $p_1 = p_2$. 
 
 ### Apartado 3.4
 
@@ -406,15 +419,16 @@ Var(T)
  \end{split}
 $$
 
+Definimos ahora la función $diferencia :[0,1] \longrightarrow \mathbb R$
 
 $$
 \tag{3.11}
 \begin{split}
 diferencia(p_1) 
 &= 
-  Var(\hat p)
+  [Var(\hat p)](p_1) 
   -
-  Var(T)
+  [Var(T)](p_1) 
 \\
 &=
 \frac{1}{150}(0.4 p_1 + 0.06) (1 - (0.4 p_1 + 0.06)) - 
@@ -467,7 +481,7 @@ plot(
   x,
   diferencia(x),
   type='l',
-  main="Diferencia distribution",
+  main="Difference distribution",
   ylab = TeX(r'($Var(X+Y)-Var(T(X,Y))$ on $p_1$)'),
   xlab = TeX(r"($p_1$)")
 )
@@ -547,18 +561,19 @@ Calcula el estimador de máxima verosimilitud de $\theta$. ¿Se parece al valor 
 
 #### Solución propuesta apartado 7.1
 
-Definimos la función a minimizar $L$ como
+Definimos la función a maximizar $L$ como
 
 $$
+\tag{7.1}
 L(\theta) = 
 - \sum_{i=1}^n \log(1 + (x_i - \theta)^2)
 $$ 
 
-y la minimizaremos numéricamente con R:
+y minimizaremos numéricamente con R el opuesto de (7.1):
 
 ```{r}
-# Cambiamos el signo porque optimize solo encuentra mínimos
-# esta función es proporcional a la opuesta de de máximo similitud, su máximo será el estimador buscado
+# El mínimo de esta función es el máximo de la función de verosimilitud,
+# Su máximo será el estimador buscado
 l <- function (theta, sample){
   return (sum( 
               sapply(
@@ -569,7 +584,8 @@ l <- function (theta, sample){
   )
 }
 
-# Calcula el mínimo de la función anterior dentro de un intervalo lo suficientemente grande
+# Calcula el mínimo de la función anterior 
+# dentro de un intervalo lo suficientemente grande
 get_stimator <- function(sample) {
   stimator <-optimize(
       function(theta) l(theta, sample),
@@ -586,13 +602,30 @@ dominious<-seq(-20, 20, 0.2)
 plot(
   dominious,
   sapply(dominious, function(x) l(x,muestra)), 
-  type='l'
+  type='l',
+  ylab = TeX(r'($-l(x)$)')
 )
 
 
 ```
 
-Como podemos observar se ha encontrado un mínimo en $\theta^*= 9.842954$ relativamente próximo al valor real que es $\theta = 10$ que está próximo.
+Como podemos observar se ha encontrado un mínimo en $\theta^*= 9.842954$ 
+relativamente próximo al valor real $\theta = 10$ .
+
+Cabe destacar que deberíamos maximizar $L$ en todo $\mathbb R$, para poder 
+encontrar el EMV, algo computacionalmente imposible con este procedimiento.
+Por lo que apriori si somos estrictos estariamos tan solo frente a 
+un máximo local. 
+
+¿Cómo se podría demostrar entonces que se trata de un máximo global?
+
+1. De manera analítica, por la monotomía del logaritmo es fácil ver que para valores 
+menores de $-100$ y mayores de $100$ (valores concretos de nuestro intervalo de búsqueda)
+la función que estamos minimizando va a seguir creciendo por los lados. 
+
+2. Se podría plantear un intervalo de confianza. Puesto que estamos con una 
+distribución de Cauchy y no existe su media habría que hacerlo con la mediana. 
+
 
 ### Apartado 7.2
 
