@@ -143,25 +143,31 @@ Se desea estimar la prevalencia $p$ de cierto trastorno gástrico. Está relacio
 
 2.  mayores de 60 años que son un 60% de la población.
 
-Se toma una muestra de 60 del estrato (1) y otra de 90 del (2). Teniendo entonces una muestra estratificada de tamaño $n=150$ individuos.
+Se toma una muestra de $n_1 = 60$ del estrato (1) y otra de $n_2 = 90$ del (2). Teniendo entonces una muestra estratificada de tamaño $n=150$ individuos.
 
 Para cada uno de ellos se observa si tienen o no la enfermedad.
 
 #### Abstracción del problema 3
 
-Notemos que para ambos estratos estamos ante una distribución binomial, donde Sea $X \sim Bin(60, p_1)$ la variable aleatorio que indica el número de individuos enfermos dentro del estrato (1) y $Y \sim Bin(90, p_2)$ la variable aleatorio que indica el número de individuos enfermos dentro del estrato (2).
+Sea $W_{i j}$ la variable aleatoria que indica si el sujeto del estrato $i \in \{1,2\}$ y $j \in \{1,\ldots, n_i\}$
+Se tiene que la variable aleatoria sigue una distribución de Bernouilli de parámetro $p_i$ esto es 
+$W_{i j} \sim \text{Bernouilli}(p_i)$. 
+
+Notemos que para ambos estratos estamos ante una distribución binomial, donde:
+
+Denotaremos como $X = \sum^{n_1}_{j=1}W_{1 j}  \sim Bin(60, p_1)$ a la variable aleatorio que indica el número de individuos enfermos dentro del estrato (1) y como $Y = \sum^{n_2}_{j=1} W_{2 j} \sim Bin(90, p_2)$ la variable aleatorio que indica el número de individuos enfermos dentro del estrato (2).
 
 Ambas variables son independientes.
 
 ### Apartado 3.1
 
-A partir de $\hat{p_i}$ la proporción muestral de inividuos enfermos en estrato $i \in \{1,2\}$ formula un estimador insesgado de la prevalencia de $p$ en la población.
+A partir de $\hat{p}_i$ la proporción muestral de inividuos enfermos en estrato $i \in \{1,2\}$ formula un estimador insesgado de la prevalencia de $p$ en la población.
 
 #### Solución propuesta apartado 3.1
 
-Comenzaremos aprenciando que $\hat{p_i}$ para todo $i \in \{1,2\}$ es un estimador insesgado, ya que la media lo es:
+Comenzaremos aprenciando que $\hat p_i$ para todo $i \in \{1,2\}$ es un estimador insesgado, ya que la media lo es:
 
-Sea $W \sim Bernoulli(p_i)$ donde $\hat p_i = n_i^{-1} \sum W_i = \bar W$
+Sea  $\hat p_i = n_i^{-1} \sum_{j = 1}^{n_i} W_{i j} = \bar W$
 
 $$E\bar{W} = E\left[ n^{-1} \sum_{i=1}^n W_i \right]= n^{-1} \sum_{i=1}^n EW_i = p_i.$$
 
@@ -179,14 +185,14 @@ $$
   p = 0.4 {p_1} + 0.6 {p_2}.
 $$
 
-Proponemos por tanto como estimador a $T$, definido como:
+Es natural por tanto proponer como estimador de $p$ a $T$, definido como:
 
 $$
 \tag{3.3}
 T(X,Y)=0.4 \hat p_1 + 0.6\hat p_2.
 $$
 
-veamos que (3.3) es insesgado:
+Veamos que (3.3) es insesgado:
 
 $$
 \begin{split}
@@ -226,54 +232,45 @@ Var(T)
 &= 
 Var(0.4 \hat{p}_1 + 0.6\hat{p}_2)
 \\
+&= 
+Var(0.4 n_1^{-1}X_1 + 0.6 n_2^{-1} X_2)
+\\
 &
 = 
-(0.4)^2 Var(\hat{p}_1) 
+\frac{0.4^2}{60^2} Var(X_1) 
 + 
-(0.6)^2Var(\hat{p}_2)
+\frac{0.6^2}{90^2}Var(X_2)
 \end{split}
 $$
 
-Donde para cada $i \in \{1,2\}$
-
-$$
-Var(\hat p_i)
-= E[(\hat p_i - Ep_i)^2]
-= E[(\hat p_i - p)^2 ]
-$$
 
 Que por tratarse de una binomial será de la forma
 
 $$
 \tag{3.5}
-Var(\hat p_i) = n_i p_i(1-p_i). 
-$$
-
-Si lo pensamos como el promedio de la suma de Bernuillis:
-
-$$
-Var
-\left(
-      n_1^{-1} \sum_{i=1}^{n_1} X_i
-\right)
-= 
-n_1^{-2} \sum_{i=1}^{n_1} Var(X_i)
-= n_1^{-2} n_1 p_1(1-p_1)
+Var(X_i) = n_i p_i(1-p_i). 
 $$
 
 sustituyendo (3.5) en (3.4) resulta:
 
+
 $$
+\tag{3.6} 
 \begin{split}
 Var(T)&= 
-0.16 n_1 p_1 (1-p_1) 
+\frac{0.4^2}{n_1^2} n_1 p_1 (1-p_1) 
 + 
-0.36 n_2 p_2 (1-p_2)
+\frac{0.6 ^2}{n_2^2} n_2 p_2 (1-p_2)
+\\
+&= 
+\frac{0.4^2}{60} p_1 (1-p_1) 
++ 
+\frac{0.6 ^2}{90} n_2 p_2 (1-p_2)
 \\
 &=
- 9.6 p_1 (1-p_1)
-+
- 32.4 p_2 (1-p_2)
+ \frac{1}{375} p_1 (1-p_1)
++ 
+ \frac{1}{250} p_2 (1-p_2).
  \end{split}
 $$
 
@@ -283,56 +280,239 @@ Si $p_1 = p_2$ ¿Se incrementa la eficiencia por el hecho de usar una muestra es
 
 #### Solución propuesta apartado 3.3
 
-La clave está en cómo se indique, si se quiere saber la probabilidad de que $X$ jóvenes y $Y$ mayores estén enfermos.
-
-Si $p_1 = p_2$ entonces ambos tendrían la misma distribución $X \sim B(n_1, p_1)$ y $Y \sim B(n_2, p_1)$ y entonces
+Se dice que un estimador $\hat \theta_1$ es más eficiente que otro estimador $\hat \theta_2$ si
 
 $$
-X + Y \sim B(n_1+n_2, p_1) = B(n, p_1)
+Var(\hat \theta_1)
+< 
+Var(\hat \theta_2).
 $$
 
-Por otra parte El parte si tenemos presente la igualdad (3.2) entonces se satiszace que:
+
+Si no tenemos en cuenta los estratos y  $p_1 = p_2$ entonces ambos tendrían la misma distribución, 
+es decir $X \sim B(n_1, p_1)$ y $Y \sim B(n_2, p_1)$ y por tanto la distribución seguiría una distribución 
 
 $$
-  p = 0.4p_1 + 0.6 p_2 =   0.4p_1 + 0.6 p_1 = p_1
+X + Y \sim B(n_1+n_2, p_1) = B(n, p_1).
 $$
 
-Por los que el modelo sin estratos sería de la forma \$\$ Z \sim B(n, p) = B(n,p) \$\$
+Por otra parte si tenemos presente la igualdad (3.2) entonces se satiszace que:
 
-Por ser ambos modelos iguales no habría diferencia en estimar al estrato $X$ con $Z$.
+$$
+  p = 0.4p_1 + 0.6 p_2 =   0.4p_1 + 0.6 p_1 = p_1.
+$$
 
-```{r}
-9.6+32.5 
+Por lo que $Z$ la variable aleatoria que contiene el número de enfermos en toda la población vendría dada como: 
 
-```
+$$
+Z = X + Y \sim B(n, p_1) = B(n,p).
+$$
+Si el estimador sigue siendo el promedio entonces 
+
+$$\hat p = n^{-1} \sum_{i=1, j=1}^{2,n_i} W_{i j} = n^{-1}(X+Y)$$
+Y su varianza vendría determinada por
+$$
+\tag{3.7}
+\begin{split}
+Var(n^{-1}(X+Y)) 
+&=
+n^{-2} n p  (1-p) 
+\\
+&=  n^{-1} p  (1-p)
+\\
+&=
+\frac{1}{150}p  (1-p).
+\end{split}
+$$ 
+Si hacemos $p_1 = p_2 = p$ en la varianza del estimador estratificada $Var(T)$ obtenida en $(3.6)$ resulta 
+
+$$
+\tag{3.8} 
+\begin{split}
+Var(T)
+&=
+ \frac{1}{375} p_1 (1-p_1)
++ 
+ \frac{1}{250} p_2 (1-p_2)
+ \\
+ &=
+ \frac{1}{375} p (1-p)
++ 
+ \frac{1}{250} p (1-p)
+ \\
+ &=
+ \left(
+ \frac{1}{375} 
+ + 
+ \frac{1}{250}
+ \right)
+ p (1-p)
+  \\
+ &=
+ \frac{1}{150}
+ p (1-p). 
+ \end{split}
+$$
+
+Como podemos observar $(3.7)$ y $(3.8)$ dan lugar a la misma varianza, luego podemos afirmar que una no es más eficiente que otra. 
 
 ### Apartado 3.4
 
 Supongamos que diez de cada cien personas mayores de 30 años tiene la enfermedad ($p_2 = 0.1$). Representa gráficamente las varianzas de los estimadores correspondientes a la muestra n estratificada como función de $p_1$. ¿Para qué valores de $p_1$ es mejor utilizar muestreo estratificado en lugar de muestreo aleatorio simple?
 
-#### Solución propuesta apartado 3.
+#### Solución propuesta apartado 3
 
+La eficiencia es un indicador de precisión, cuando menor sea la varianza menor será los errores medios cometidos. 
+Planteamos por tanto la función diferencia de varianzas: 
+
+Teniendo presente $(3.2)$ y $(3.7)$ tenemos que  
+
+$$
+\tag{3.9}
+\begin{split}
+  Var(\hat p) 
+  &=
+  \frac{1}{n}(0.4 p_1 + 0.6 p_2) (1 - (0.4 p_1 + 0.6 p_2))
+  \\
+  &=
+  \frac{1}{150}(0.4 p_1 + 0.6 \times 0.1) (1 - (0.4 p_1 + 0.6 \times 0.1))
+  \\
+  &=
+  \frac{1}{150}(0.4 p_1 + 0.06) (1 - (0.4 p_1 + 0.06))
+\end{split}
+$$
+donde $(3.9)$ puede verse como una función dependiente de $p_1$. 
+
+Sustituyendo $p_2 = 0.1$ en $(3.6)$ obtenemos la siguiente función dependiente de $p_1$: 
+
+$$
+\tag{3.10} 
+\begin{split}
+Var(T)
+&= 
+ \frac{1}{375} p_1 (1-p_1)
++ 
+ \frac{1}{250} p_2 (1-p_2)
+ \\
+&=
+ \frac{1}{375} p_1 (1-p_1)
++ 
+ \frac{1}{250} 0.1 (1-0.1)
+ \\
+ &=
+ \frac{1}{375} p_1 (1-p_1)
++ 
+ \frac{9}{25000}.
+ \end{split}
+$$
+
+
+$$
+\tag{3.11}
+\begin{split}
+diferencia(p_1) 
+&= 
+  Var(\hat p)
+  -
+  Var(T)
+\\
+&=
+\frac{1}{150}(0.4 p_1 + 0.06) (1 - (0.4 p_1 + 0.06)) - 
+\frac{1}{375} p_1 (1-p_1)
+-
+ \frac{9}{25000}
+ \\
+ &=
+ 0.0016p_1^2-0.00032p_1+0.000016.
+\end{split}
+$$
+A la vista de $(3.11)$ podemos ver que 
+$$
+\tag{3.12}
+\begin{split}
+\frac{\partial}{\partial p_1}diferencia(p_1) 
+&= 
+ \frac{\partial}{\partial p_1} 0.0016p_1^2-0.00032p_1+0.000016
+\\
+&= 
+ \frac{\partial}{\partial p_1} 0.0032p_1-0.00032
+\end{split}
+$$
+alcanza un mínimo en $p_1 = 0.1$ cuyo valor es 
+
+$$
+\begin{split}
+diferencia(p_1 =0.1) 
+ &=
+ 0.0016 p_1^2-0.00032p_1+0.000016
+ \\
+ &=
+ \frac{16}{10^6} - \frac{32}{10^6} + \frac{16}{10^6}
+ \\
+ &=
+0.
+\end{split}
+$$
+Es decir, salvo en $p_1 = 0.1$ que sería indiferente,  para el resto de casos es mejor usar el estimador estratificado. 
+(Notemos además que este es el caso en que $p_1 = p_2$ del apartado anterior). 
 ```{r}
 library(latex2exp)
-f <- function (p_1, p_2=0.1){
-  return (9.6 *p_1*(1-p_1)+32.4 * p_2 * (1-p_2))
+diferencia<- function (p_1){
+  return (0.0016*p_1^2-0.00032*p_1+0.000016)
 }
 
 # Plotting
 x <- seq(0,1,0.01)
 plot(
   x,
-  f(x),
+  diferencia(x),
+  type='l',
+  main="Diferencia distribution",
+  ylab = TeX(r'($Var(X+Y)-Var(T(X,Y))$ on $p_1$)'),
+  xlab = TeX(r"($p_1$)")
+)
+```
+
+```{r}
+library(latex2exp)
+Var_T <- function (p_1, p_2=0.1){
+  return (
+            (1/375)*p_1*(1-p_1) 
+          +
+            (1/250)* p_2 *(1-p_2)
+          )
+}
+Var_p <-
+  function (p_1, p_2=0.1){
+  return (
+            (1/150)*(0.4*p_1+0.6*p_2)*(1-(0.4*p_1+0.6*p_2)) 
+          )
+}
+# Plotting
+x <- seq(0,1,0.01)
+plot(
+  x,
+  Var_T(x),
   type='l',
   main="Variance distribution",
-  ylab = TeX(r'(Variance depending on $p_1$)'),
+  ylab = TeX(r'(Variance of T depending on $p_1$)'),
+  xlab = TeX(r"($p_1$)")
+)
+# Plotting
+x <- seq(0,1,0.01)
+plot(
+  x,
+  Var_p(x),
+  type='l',
+  main="Variance distribution",
+  ylab = TeX(r'(Variance of the stimator of $p$ depending on $p_1$)'),
   xlab = TeX(r"($p_1$)")
 )
 
 # Diferencia del modelo
 
 differences <- function (p_1, p_2=0.1, n = 150){
-  return (-(9.6 *p_1*(1-p_1)+32.4 * p_2 * (1-p_2)) + n*p_1*(1-p_1) )
+  return (Var_p(p_1) - Var_T(p_1))
 }
 
 # Plotting
@@ -345,14 +525,11 @@ plot(
   ylab = TeX(r'($Var(X+Y)-Var(T(X,Y))$)'),
   xlab = TeX(r"($p_1$)")
 )
-#Cuanto mayor ser sea |p1 - o.5| más renta
 
-# when the minimum is found
-library(purrr)
-optimize(f, c(0,1))
 ```
 
 \newpage
+
 ## Ejercicio 7
 
 El siguiente código genera una muestra de 100 datos de una distribución de Cauchy con parámetro de posición:
@@ -365,18 +542,19 @@ muestra <- rt(n, 1) + theta
 ```
 
 ### Apartado 7.1
+
 Calcula el estimador de máxima verosimilitud de $\theta$. ¿Se parece al valor verdadero?
 
 #### Solución propuesta apartado 7.1
 
-Definimos la función a minimizar $L$ como 
+Definimos la función a minimizar $L$ como
 
 $$
 L(\theta) = 
 - \sum_{i=1}^n \log(1 + (x_i - \theta)^2)
-$$
-y la minimizaremos numéricamente con R:
+$$ 
 
+y la minimizaremos numéricamente con R:
 
 ```{r}
 # Cambiamos el signo porque optimize solo encuentra mínimos
@@ -413,9 +591,11 @@ plot(
 
 
 ```
-Como podemos observar se ha encontrado un mínimo en $\theta^*= 9.842954$ relativamente próximo al valor real que es $\theta = 10$ que está próximo. 
+
+Como podemos observar se ha encontrado un mínimo en $\theta^*= 9.842954$ relativamente próximo al valor real que es $\theta = 10$ que está próximo.
 
 ### Apartado 7.2
+
 Lleva a cabo algún experimento de simulación para aproximar la varianza del estimador de máxima verosimilitud.
 
 #### Solución al apartado 7.2
@@ -423,24 +603,17 @@ Lleva a cabo algún experimento de simulación para aproximar la varianza del es
 El diseño del experimento consistirá en generar una matriz $n \times m$ de muestras, calcular el estimador verosimil para cada fila $\theta^{(i)}$ para cada $i \in \{1, \ldots, n\}$y con ellos se calculará la varianza estimada
 
 $$
-Var(\theta^*) =
+Var(\hat \theta) = n^{-1}
 \sum_{i=1}^n \left(
-\theta^{(i)} - \theta^{*}
+\theta^{(i)} - E[\hat \theta]
 \right)^2
 $$
 
-
-
 ```{r}
 set.seed(123)
-m = 1000
-matriz_muestras <- rt(n, m) + theta
-estimador_por_filas <- sapply(matriz_muestras, get_stimator)
-varianza <- sum(
-  sapply(
-    estimador_por_filas,
-    function(x) (x-estimador)^2
-  )
-)
+m = 100
+matriz_muestras <- matrix(rt(n*m, 1), n) + theta
+estimador_por_filas <- apply(matriz_muestras,2, get_stimator)
+varianza <- var(estimador_por_filas)
 cat("La varianza de nuestro estimador es ", varianza)
 ```
