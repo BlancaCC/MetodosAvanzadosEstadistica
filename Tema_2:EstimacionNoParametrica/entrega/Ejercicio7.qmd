@@ -1,0 +1,239 @@
+---
+title: "Entrega de ejercicios Tema 3"
+author: "Blanca Cano Camarero"
+date: \today
+format: pdf
+editor: visual
+toc: true
+toc-depth: 3
+lang: es
+---
+```{r}
+library(purrr)
+library(ggplot2)
+library(tidyverse) 
+
+set.seed(5)
+```
+# Ejercicio 7 
+
+```{r}
+muestra <- c(1, 2, 3.5, 4, 7, 7.3, 8.6, 12.4, 13.8, 18.1)
+varianza <- var(muestra)
+```
+
+
+**Apartado 1**. Usa bootstrap para determinar el error típico de este estimador de $\sigma^2$.
+
+**Solución**
+Generaremos nuevas muestras a partir de las que ya tenemos, calcularemos sus varianzas y finalemente el  error típico de éstas. 
+
+```{r}
+size <- length(muestra)
+number_of_samples <- 1000
+
+# Paso 1: Remuestro de los datos
+remuestreo <- matrix(
+  sample(muestra, size*number_of_samples, replace=TRUE),
+  nrow = number_of_samples
+)
+# Paso 2: Cálculo de la varianza de cada remuestreo
+varianzas_remuestreo <- apply(remuestreo, 1, var)
+
+# Paso 3: Cálculo del error típico 
+et <- sd(varianzas_remuestreo)
+
+cat('El error típico de remuestreo es ', et)
+
+```
+
+
+**Apartado 2** Compara el resultado con el error típico que darías si, por ejemplo, supieras que los datos proceden de una distribución normal.
+**Solución**
+Bajo hipótesis de normalidad podría aplicarse el lema de Fisher, que dice así: 
+
+Sean $X_1,X_2, \ldots, X_n$ variables aleatorias independientes e identicamente distribuidas de una normal $\mathcal{N}(\mu, \sigma^2)$.
+Entonces: 
+\begin{enumerate}
+\item $\bar X$ y $S^2$ son independientes. 
+\item 
+$$
+\frac{(n-1)}{\sigma^2} S^2 \sim \chi^2_{n-1}
+$$
+\item $\bar X \sim \mathcal{N}(\mu, \frac{\sigma^2}{n})$.
+\end{enumerate}
+
+Puesto que nuestro objetivo es encontrar un estimador de la $Var(S^2)$ tomando la varianza de ambos 
+miembros (2) resulta: 
+
+$$
+Var\left( \frac{n-1}{\sigma^2} S^2 \right) = Var(\chi^2_{n-1})
+$$
+que por las propiedades de la variaza y que $var(\chi^2_{k}) = 2k$ se tiene 
+
+$$
+  \frac{(n-1)^2}{\sigma^4}
+  Var\left(  S^2 \right) 
+  = 
+  2(n-1),
+$$
+Por lo que concluímos que 
+$$
+Var\left(  S^2 \right)
+= 
+\frac{2 \sigma^4}{n-1}.
+$$
+Por el apartado anterior $\sigma$ puede ser estimada con $S$, por lo que finalmente podemos concluir que 
+
+$$
+\hat{Vat(S^2)} 
+= 
+\frac{2 S^4}{n-1}
+$$
+```{r}
+# El estimador de la varianza de una normal
+2*(varianza ^4)/(size - 1)
+```
+Notemso que esto solo se puede utilizar para una normal. 
+
+**Apartado 3** Calcula un intervalo de confianza para $\sigma^2$
+ usando el método bootstrap híbrido. Fija $1 - \alpha = 0.95$.
+ 
+ **Solución** 
+ 
+ Para explicar la idea que subyace en el diseño del algoritmo de *boostrap híbrido*, comenzaremos con las siguientes 
+ 
+ Se define la proporción como 
+ 
+$$
+  \tilde H_n(x) = \frac{1}{B} \sum_{b}^B I_{T^{*(b)} \leq x}.
+$$
+
+Sea 
+$$
+H_n(x)
+= 
+P_F 
+\left(
+  \sqrt n  \left( \bar X - \mu \right) \leq x
+\right)
+$$
+que por no ser conocido aproximaremos como 
+$$
+\hat H_n(x)
+= 
+P_F 
+\left(
+  \sqrt n  \left( \bar{X^*} - \bar X \right) \leq x
+\right)
+$$
+
+
+$$
+1 - \alpha 
+= 
+P 
+\left\{
+    H_n^{-1}\left( 
+              \frac{\alpha}{2}
+          \right)
+    \leq
+    \sqrt n \left(\hat \theta - \theta \right)
+    \leq
+     H_n^{-1}\left( 
+              1- \frac{\alpha}{2}
+          \right)
+\right\}
+$$
+dando lugar al intervalo de confianza 
+
+$$
+\left[
+  \hat \theta - \sqrt n H_n^{-1}\left( 1- \frac{\alpha}{2} \right)
+  , 
+  \hat \theta - \sqrt n H_n^{-1}\left(\frac{\alpha}{2} \right)
+\right]
+$$
+
+
+Puesto que $H_n$ no es conocido los sustituiremos por el estimador de *bootstrap* $\hat H_n$ y es el llamado 
+*método híbrido*. 
+
+
+De esta manera resulta: 
+
+```{r}
+# --- Funciones auxiliares --- 
+# Construción de la inversa de H(H, muestra_ordenada, B^{-1})
+H_inv <- function (alpha, muestra_ordenada, B_inv, acumulado = 0, index = 0) {
+  if(acumulado < alpha){
+    return (H_inv(alpha, muestra_ordenada, B_inv, acumulado + B_inv, index+1 ))
+  }
+  else{
+    return(muestra_ordenada[index])
+  }
+}
+# En lugar de emplear esta función utilizaremos la función `quantile`
+
+# \hat \theta: Estimador de la varianza 
+
+```
+
+
+```{r}
+# Parámetros 
+a = 0.05 # alpha 
+B = length(muestra) # tamaño del reemuestro
+numero_remuestreos = 100
+repeticiones_experimento = 100
+
+## variable auxiliares 
+B_inv = 1/B
+acierto <- NULL
+intervalo <- NULL
+
+for(i in 1:repeticiones_experimento){
+  
+  muestras_boostrap <- matrix(
+    sample(muestra, B*numero_remuestreos, rep=TRUE),
+    nrow = numero_remuestreos 
+  )
+
+  varianzas_bootstrap = apply(muestras_boostrap, 1, var)
+  
+  muestras_normalizadas <- sqrt(B)*(varianzas_bootstrap - varianza)
+
+  
+  ic_min <-varianza - quantile(muestras_normalizadas, 1-a/2)/sqrt(B)
+  
+  ic_max <-varianza - quantile(muestras_normalizadas, a/2)/sqrt(B)
+  
+  intervalo <- rbind(intervalo, c(ic_min, ic_max))
+}
+
+df <- data.frame(
+  ic_min <-intervalo[, 1],
+  ic_max <- intervalo[, 2],
+  ind = 1:numero_remuestreos
+)
+df
+
+
+ggplot(df) +
+  geom_linerange(aes(xmin = ic_min, xmax = ic_max, y = ind)) +
+  geom_vline(aes(xintercept = varianza), linetype = 2) + 
+  theme_bw() + 
+  labs( y= 'Muestras', x = 'Intervalos (nivel de confianza 0.95))', 
+        title = 'IC (método bootstrap híbrido)'
+  )
+```
+
+
+
+
+
+
+
+
+
+

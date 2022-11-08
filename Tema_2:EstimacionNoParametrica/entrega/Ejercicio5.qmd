@@ -4,7 +4,7 @@ library(ggplot2)
 library(purrr)
 library(nortest) # Para ejemplo del Lillie test
 
-set.seed(5)
+set.seed(100)
 ```
 
 La función (ksnoest) calcula el estadístico de Kolmogorov-Smirnov cuando estamos interesados en contrastar si nuestros datos siguen una distribución normal estándar:
@@ -51,7 +51,7 @@ knoest_results <- apply(X = samples,
                        FUN = ksnoest
                   )
 # Cálculo de ksest
-kest_results <- apply(samples,2, ksest )
+kest_results <- apply(samples,1, ksest )
 
 ```
 
@@ -129,12 +129,15 @@ $\alpha$. El verdadero nivel de significación, ¿es mayor o menor que $\alpha$?
 El nivel de significación será por lo general menor, porque nosotros estamos suponiendo que es igual a una normal de media y distribución
 de parámetros estimados; que son diferentes a los ideal desconocidos. 
 
-Vamos a proceder a poner un ejmplo para los datos que ya hemos calculado, para ello tengamos presente que uno de los atributos de 
+Vamos a proceder a poner un ejemplo para los datos que ya hemos calculado, para ello tengamos presente que uno de los atributos de 
 `ks.test` es el p-valor;  la probabilidad de aceptar la hipótesis nula cuando esta es verdadera. 
 Por otra parte se tiene que 
 el nivel de significación $\alpha$ es la probabilidad de rechazar la hipótesis nula siendo verdadera. 
 
-Por lo que $\alpha = 1 - p-$valor. 
+Por lo que $\alpha = 1 - p-$valor.
+
+**Todo Dibujar las gráficas de las ditribuciones reales y compararlas**
+
 
 ```{r}
 ksnoest_alpha <- function(datos){
@@ -175,7 +178,7 @@ nivel_critico <- 0.19
 numero_de_mayores <-  length(kest_results[kest_results > nivel_critico])
 porcentaje <- 100 * numero_de_mayores / number_of_samples
 
-cat('El porcentaje de mayores es ', porcentaje)
+cat('El porcentaje de mayores es un ', porcentaje, '%' )
 
 # Podemos comprobarlo además haciendo 
 
@@ -183,8 +186,6 @@ lillie.test(samples)
 
 
 ```
-
-**Esto está mal debería ser 5%**
 
 **Apartado 5**. Haz una pequeña simulación para aproximar el nivel de significación del contraste KSL cuando se utiliza un valor crítico 0.12 para muestras de tamaño 40.
 
@@ -203,7 +204,7 @@ samples <-  matrix(
    rnorm( number_of_samples * sample_size),
    nrow = number_of_samples
 )
-kest_results <- apply(samples,2, ksest)
+kest_results <- apply(samples,1, ksest)
 
 numero_de_mayores <-  length(kest_results[kest_results > nivel_critico])
 porcentaje <- 100 * numero_de_mayores / number_of_samples

@@ -1,0 +1,152 @@
+#Ejercicio 15 
+
+Considera una variable aleatoria con distribución beta de parámetros 
+$\alpha = 3, \beta = 6$. 
+
+**Apartado 1**
+Representa gráficamente la función de densidad y la función de distribución.
+
+**Solución**
+
+```{r}
+library(ggplot2)
+library(purrr)
+set.seed(123)
+# Parámetros 
+a <- 3
+b <- 6
+#ggplot() +
+#geom_function(aes(colour = "normal(0,1)"), fun = f(x) dbeta(x, a, b)) 
+```
+
+```{r}
+# Initialize some values.
+
+# Función de densidad 
+ggplot() + 
+  stat_function(fun = dbeta, args = list(shape1 = a, shape2= b), 
+                geom = "area", 
+                fill = "blue", alpha = 0.25) + 
+  stat_function(fun = dbeta, args = list(shape1 = a, shape2= b)) + 
+  labs(x = "\n x", y = "f(x) \n", 
+       title = "Función de densidad de una beta a=3, b =6 \n") 
+
+## Función de distribución 
+  ggplot() + 
+  stat_function(fun = pbeta, args = list(shape1 = a, shape2= b), 
+                geom = "area", 
+                fill = "blue", alpha = 0.25) + 
+  stat_function(fun = pbeta, args = list(shape1 = a, shape2= b)) + 
+  labs(x = "\n x", y = "f(x) \n", 
+       title = "Función de probabilidad de una beta a=3, b =6 \n") 
+
+```
+
+**Apartado 2**
+Simula una muestra de tamaño 20 de esta distribución. A continuación, representa en los mismos gráficos del apartado (a) las estimaciones de 
+$F$ y $f$ obtenidas respectivamente mediante la función de distribución empírica 
+$F_N$ y un estimador del núcleo $\hat f$ obtenidos a partir de la muestra simulada.
+
+```{r}
+# Paso 1: Simulación de la muestra
+sample_size <- 20 
+sample <- rbeta(sample_size, a, b)
+
+# Paso 2: Representación de las estimaciones
+## Función de densida y frecuencia 
+bins = 15
+df <- data.frame(muestras = sample)
+  scale <- sample_size/bins
+  # get adapted norm
+  scaled_norm <- function (x) scale*dbeta(x, a,b)
+
+  ggplot(df, aes(x = sample)) + 
+    ggtitle("Histograma de la muestra y función de densidad" ) +
+    xlab("Valor x") + ylab("Frecuencia") + 
+      geom_histogram(aes(y =..density..),
+                     colour = "black", 
+                     fill = "white", 
+                     bins = bins) +
+  geom_function(aes(colour = "Densidad de una beta"), fun = scaled_norm ) 
+```
+Esto nos da una idea intuitiva de la distribución, vamos a calcularla apriximadamente con estimadores de núcle: 
+
+```{r}
+# Parámetros 
+h <- 0.1
+K <- function(x) dnorm(x,0,1) # Utilizaremos un núcleo gaussiano 
+
+f <- function(x, our_sample = sample){
+  sample_size = length(our_sample)
+  return (sum(map_dbl(our_sample, function(xi)(K((x-xi)/h))))/(h*sample_size))
+} 
+
+x <- seq(0,1,0.01)
+y <- map_dbl(x,f)
+
+# TODO: Añadir etiquetas
+df <- data.frame(x=x, y=y)
+ggplot(data = df, aes(x, y)) +
+  geom_line() +
+  stat_function(fun = dbeta, args = list(shape1 = a, shape2= b)) 
+
+```
+
+  
+```{r}  
+  ## Función de distribución y la empírica 
+  # Función de disribución a partir de la muestra 
+F <- function (x, X=sample){
+    n = length(X)
+    lower = length(X[X <= x])
+    return (lower / sample_size)
+}
+x <- sample[order(sample)]
+y <- map_dbl(x, F)
+
+df <- data.frame(x=x, y=y)
+
+ggplot(data = df, aes(x, y)) +
+  geom_step()+
+  geom_point()+
+  stat_function(fun = pbeta, args = list(shape1 = a, shape2= b), 
+                geom = "area", 
+                fill = "blue", alpha = 0.25) + 
+  stat_function(fun = pbeta, args = list(shape1 = a, shape2= b)) +
+  xlim(0,1) +
+  labs(x = "\n x", y = "f(x) \n", 
+       title = "Función de probabilidad de una beta a=3, b =6 \n") 
+
+```
+```{r}
+ x <- sample[order(sample)]
+y <- map_dbl(x, F)
+
+plot(x,y, type='s')
+df <- data.frame(x = x,y=y)
+
+ggplot(data = df, aes(x, y)) +
+geom_step()+
+geom_point()
+```
+**Apartado 3**
+Verifica empíricamente el grado de aproximación alcanzado en las estimaciones de $F$ y $f$.
+Para ello, genera 200 muestras de tamaño 20 y para cada una de ellas evalúa el error (medido en la norma del supremo, es decir, el máximo de las diferencias entre las funciones) cometido al aproximar 
+$F$ por $F_n$ y $f$ por $\hat f$.Por último, calcula el promedio de los 200 errores obtenidos.
+
+
+```{r}
+# Generación de muestras
+number_of_samples <- 200
+sample_size = 20
+samples_matrix <- matrix(
+  rbeta(sample_size*number_of_samples, a, b),
+  nrow = number_of_samples
+)
+
+# Estimamos
+
+apply(samples_matrix, 1, function(x)(norm(x, 'I')))
+help(density)
+
+```
