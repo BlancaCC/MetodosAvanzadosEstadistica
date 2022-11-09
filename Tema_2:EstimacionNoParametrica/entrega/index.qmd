@@ -1,0 +1,16 @@
+---
+title: "Entrega de ejercicios Tema 2"
+author: "Blanca Cano Camarero"
+date: \today
+format: pdf
+editor: visual
+toc: true
+toc-depth: 3
+lang: es
+---
+\newpage
+{{< include Ejercicio5.qmd >}}
+\newpage
+{{< include Ejercicio7.qmd >}}
+\newpage
+#{{< include Ejercicio15.qmd >}}

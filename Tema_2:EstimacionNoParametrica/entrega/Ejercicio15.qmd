@@ -12,15 +12,14 @@ Representa gráficamente la función de densidad y la función de distribución.
 library(ggplot2)
 library(purrr)
 set.seed(123)
-# Parámetros 
-a <- 3
-b <- 6
-#ggplot() +
-#geom_function(aes(colour = "normal(0,1)"), fun = f(x) dbeta(x, a, b)) 
 ```
 
 ```{r}
 # Initialize some values.
+# Parámetros 
+a <- 3
+b <- 6
+ 
 
 # Función de densidad 
 ggplot() + 
@@ -69,7 +68,7 @@ df <- data.frame(muestras = sample)
                      bins = bins) +
   geom_function(aes(colour = "Densidad de una beta"), fun = scaled_norm ) 
 ```
-Esto nos da una idea intuitiva de la distribución, vamos a calcularla apriximadamente con estimadores de núcle: 
+Esto nos da una idea intuitiva de la distribución, vamos a calcularla apriximadamente con estimadores de núcleo: 
 
 ```{r}
 # Parámetros 
@@ -83,12 +82,24 @@ f <- function(x, our_sample = sample){
 
 x <- seq(0,1,0.01)
 y <- map_dbl(x,f)
+estimador_nucleo<- density(sample) # versión de R
 
-# TODO: Añadir etiquetas
+colors <- c("Densidad real" = "blue", "Densidad propia" = "violet", "Density by R" = "orange")
+
+# Densidad propia 
 df <- data.frame(x=x, y=y)
-ggplot(data = df, aes(x, y)) +
+ggplot(data = df, aes(x, y, color = "Densidad propia")) +
   geom_line() +
-  stat_function(fun = dbeta, args = list(shape1 = a, shape2= b)) 
+  stat_function(fun = dbeta, args = list(shape1 = a, shape2= b), aes(color = "Densidad real"))+
+  scale_color_manual(values = colors)
+
+# Densidad de R
+df <- data.frame(x = estimador_nucleo$x, y = estimador_nucleo$y)
+ggplot(data = df, aes(x, y, color = "Density by R")) +
+  geom_line() +
+  stat_function(fun = dbeta, args = list(shape1 = a, shape2= b), aes(color = "Densidad real"))+
+  scale_color_manual(values = colors)
+
 
 ```
 
@@ -101,18 +112,20 @@ F <- function (x, X=sample){
     lower = length(X[X <= x])
     return (lower / sample_size)
 }
-x <- sample[order(sample)]
-y <- map_dbl(x, F)
-
-df <- data.frame(x=x, y=y)
-
-ggplot(data = df, aes(x, y)) +
-  geom_step()+
-  geom_point()+
+F_vectorial <- function (vector_of_x,X = sample){
+  lower_vector <- NULL
+  n = length(X)
+  for(x in vector_of_x){
+    lower_vector <- rbind(lower_vector,length(X[X <= x]))
+  }
+  return(lower_vector / n)
+}
+ggplot() + 
   stat_function(fun = pbeta, args = list(shape1 = a, shape2= b), 
                 geom = "area", 
                 fill = "blue", alpha = 0.25) + 
   stat_function(fun = pbeta, args = list(shape1 = a, shape2= b)) +
+  geom_function(fun = F_vectorial, aes(colour = "Función de distribución empírica")) + 
   xlim(0,1) +
   labs(x = "\n x", y = "f(x) \n", 
        title = "Función de probabilidad de una beta a=3, b =6 \n") 

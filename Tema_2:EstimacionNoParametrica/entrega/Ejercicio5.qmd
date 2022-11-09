@@ -71,7 +71,7 @@ boxplot(kest_results,knoest_results,
 ```
 
 En *boxplot* la media viene indicada como la línea negra central, 
-a la vista del gráfico en ktest se obtiene una media menor. 
+a la vista del gráfico en ktest (el verde) se obtiene una media menor. 
 
 La motivación de esto es la siguiente: de acorde a la documentación de R (ejecute `help(ks.test)`)  el estadístico de test es 
 
@@ -80,9 +80,9 @@ D^+ = \max_u( F_x(u) - F_y(u))
 $$
 Que en nuestro caso se corresponde con la diferencia entre la función de distribución empírica y la de una normal. 
 
-Notemos que por defecto en *knoest* se está comparando con una normal de media $0$ y desviación típica $1$ mientras que en *ktest*, la normal que se utiliza tiene como media la media y como desviación típica la calculada de los datos.  Al ser el tamaño de muestra relativamente pequeño aunque los datos idealmente pertenecen a tal distribución. 
+Por defecto, en *knoest* se está comparando con una normal de media $0$ y desviación típica $1$. Mientras que en *ktest*, la normal que se utiliza tiene como media la media y como desviación típica la calculada de la muestra.  Al ser el tamaño de muestra relativamente pequeño, aunque los datos idealmente pertenecen a a una distribución de media cero y varianza 1, el error de la distribución empírica es menor con el de la distribución estimada. 
 
-Para ejemplificar lo dicho vamos a mostrar un histograma de los resultados junto dos las dos distribuciones normales planteadas. 
+Para ejemplificar lo dicho vamos a mostrar un histograma de los resultados, junto con dos funciones de probaibilidad, el de una normal de media cero y varianza 1 (la verde) y el de una normal de parámetros estimados con la muestra (curva naranja). 
 
 ```{r}
 bins = 15
@@ -126,39 +126,38 @@ $\alpha$. El verdadero nivel de significación, ¿es mayor o menor que $\alpha$?
 
 **Solución**
 
-El nivel de significación será por lo general menor, porque nosotros estamos suponiendo que es igual a una normal de media y distribución
-de parámetros estimados; que son diferentes a los ideal desconocidos. 
+El nivel de significación $\alpha$ es la probabilidad de rechazar la hipótesis nula siendo verdadera,
+será por lo general menor, porque nosotros estamos suponiendo que es igual a una normal de media y varianza
+estimadas; que son diferentes a los parámetros ideales *desconocidos*. 
 
-Vamos a proceder a poner un ejemplo para los datos que ya hemos calculado, para ello tengamos presente que uno de los atributos de 
-`ks.test` es el p-valor;  la probabilidad de aceptar la hipótesis nula cuando esta es verdadera. 
-Por otra parte se tiene que 
-el nivel de significación $\alpha$ es la probabilidad de rechazar la hipótesis nula siendo verdadera. 
+Como ejemplo de cómo efecta la estimación de parámetros
+ mostraré cómo varía el p-valor;  
+la probabilidad de aceptar la hipótesis nula cuando esta es verdadera. 
+Por la misma explicación anterior, ahora para los parámetros estimados el p-valor debería de ser mayor
+que para los fijos *ideales*. 
+Este valor es  uno de los atributos de `ks.test`.
 
-Por lo que $\alpha = 1 - p-$valor.
 
-**Todo Dibujar las gráficas de las ditribuciones reales y compararlas**
 
 
 ```{r}
 ksnoest_alpha <- function(datos){
     p_value <- ks.test(datos,pnorm)$p
-    return(1 - p_value)
+    return(p_value)
 }
 
 ksest_alpha <- function(datos){
     mu <- mean(datos)
     stdev <- sd(datos)
     p_value <- ks.test(datos, pnorm, mean=mu, sd=stdev)$p
-    return(1 - p_value)
+    return(p_value)
 }
 
 significacion_sin_estimar <- mean(apply(samples, 2, ksnoest_alpha))
 significacion_estimada <- mean(apply(samples, 2,ksest_alpha))
-sprintf('La media de nivel de signficación (para ksnoest) sin estimar los parámetros es %.4f.', significacion_sin_estimar)
-sprintf('La media de nivel de signficación para ksest es: %.4f.', significacion_estimada)
+sprintf('La media del (para ksnoest) sin estimar los parámetros es %.4f.', significacion_sin_estimar)
+sprintf('La media de del p para ksest es: %.4f.', significacion_estimada)
 
-veces_menor = significacion_sin_estimar / significacion_estimada * 100 
-sprintf('Donde para el estimado es un  %.3f por ciento menor', veces_menor)
 
 ```
 Podemos observar como para parámetro estimado es menor en nuestro caso. 
@@ -173,6 +172,7 @@ $\alpha = 0.05$ y $n = 20$
 **Solución** 
 
 ```{r}
+
 nivel_critico <- 0.19
 # Sacamos en una lista los mayores
 numero_de_mayores <-  length(kest_results[kest_results > nivel_critico])
@@ -180,8 +180,7 @@ porcentaje <- 100 * numero_de_mayores / number_of_samples
 
 cat('El porcentaje de mayores es un ', porcentaje, '%' )
 
-# Podemos comprobarlo además haciendo 
-
+# Podemos comprobar el p valor además haciendo 
 lillie.test(samples)
 
 
@@ -196,24 +195,32 @@ Para aproximar el nivel de significación lo que haremos será generar  `number_
 Calcularemos el porcentaje esas muestras se quedan por encima del valor crítico `nivel_critico <- 0.12`
 
 ```{r}
-nivel_critico <- 0.12
+# Parámetros
+nivel_critico <- 0.120
 number_of_samples <- 1000
 sample_size <- 40
+times_repeating_experiment = 50
 
-samples <-  matrix(
-   rnorm( number_of_samples * sample_size),
-   nrow = number_of_samples
-)
-kest_results <- apply(samples,1, ksest)
+# Variables auxiliares
+porcentaje <- NULL
 
-numero_de_mayores <-  length(kest_results[kest_results > nivel_critico])
-porcentaje <- 100 * numero_de_mayores / number_of_samples
+for(i in 1:times_repeating_experiment){
+  samples <-  matrix(
+     rnorm( number_of_samples * sample_size),
+     nrow = number_of_samples
+  )
+  kest_results <- apply(samples,1, ksest)
+  
+  numero_de_mayores <-  length(kest_results[kest_results > nivel_critico])
+  porcentaje <-  rbind(porcentaje,numero_de_mayores / number_of_samples)
+}
 
-cat('El porcentaje de mayores es ', porcentaje)
-cat('\nEs decir alpha es approximadamente ', porcentaje/100)
+cat('El porcentaje de mayores es de media', mean(porcentaje)*100, '%')
+cat('\nEs decir alpha es approximadamente ',mean(porcentaje), ' +-', sd(porcentaje))
+
 
 ```
 
-
+Si observamos la tablas de KOLMOGOROV‐SMIRNOV, para $n=40$ y nivel crítico $0.1204$ se tiene que $\alpha = 0.15$.
 
 

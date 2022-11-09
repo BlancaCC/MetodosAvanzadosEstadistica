@@ -116,7 +116,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(purrr)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(nortest) <span class="co"># Para ejemplo del Lillie test</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>La función (ksnoest) calcula el estadístico de Kolmogorov-Smirnov cuando estamos interesados en contrastar si nuestros datos siguen una distribución normal estándar:</p>
 <div class="cell">
@@ -152,7 +152,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>                       <span class="at">FUN =</span> ksnoest</span>
 <span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>                  )</span>
 <span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Cálculo de ksest</span></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>kest_results <span class="ot">&lt;-</span> <span class="fu">apply</span>(samples,<span class="dv">2</span>, ksest )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>kest_results <span class="ot">&lt;-</span> <span class="fu">apply</span>(samples,<span class="dv">1</span>, ksest )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p><strong>Apartado 2</strong>. Mediante diagramas de cajas, compara las distribuciones de ambos estadísticos. ¿En cuál de los dos casos se obtienen en media valores menores? ¿Podrías dar una razón intuitiva?</p>
 <p><strong>Solución</strong></p>
@@ -168,13 +168,13 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p><img src="Ejercicio5_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<p>En <em>boxplot</em> la media viene indicada como la línea negra central, a la vista del gráfico en ktest se obtiene una media menor.</p>
+<p>En <em>boxplot</em> la media viene indicada como la línea negra central, a la vista del gráfico en ktest (el verde) se obtiene una media menor.</p>
 <p>La motivación de esto es la siguiente: de acorde a la documentación de R (ejecute <code>help(ks.test)</code>) el estadístico de test es</p>
 <p><span class="math display">\[
 D^+ = \max_u( F_x(u) - F_y(u))
 \]</span> Que en nuestro caso se corresponde con la diferencia entre la función de distribución empírica y la de una normal.</p>
-<p>Notemos que por defecto en <em>knoest</em> se está comparando con una normal de media <span class="math inline">\(0\)</span> y desviación típica <span class="math inline">\(1\)</span> mientras que en <em>ktest</em>, la normal que se utiliza tiene como media la media y como desviación típica la calculada de los datos. Al ser el tamaño de muestra relativamente pequeño aunque los datos idealmente pertenecen a tal distribución.</p>
-<p>Para ejemplificar lo dicho vamos a mostrar un histograma de los resultados junto dos las dos distribuciones normales planteadas.</p>
+<p>Por defecto, en <em>knoest</em> se está comparando con una normal de media <span class="math inline">\(0\)</span> y desviación típica <span class="math inline">\(1\)</span>. Mientras que en <em>ktest</em>, la normal que se utiliza tiene como media la media y como desviación típica la calculada de la muestra. Al ser el tamaño de muestra relativamente pequeño, aunque los datos idealmente pertenecen a a una distribución de media cero y varianza 1, el error de la distribución empírica es menor con el de la distribución estimada.</p>
+<p>Para ejemplificar lo dicho vamos a mostrar un histograma de los resultados, junto con dos funciones de probaibilidad, el de una normal de media cero y varianza 1 (la verde) y el de una normal de parámetros estimados con la muestra (curva naranja).</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>bins <span class="ot">=</span> <span class="dv">15</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -220,90 +220,91 @@ D^+ = \max_u( F_x(u) - F_y(u))
 </div>
 <p><strong>Apartado 3.</strong> Imagina que estimamos los parámetros y usamos las tablas de la distribución del estadístico de Kolmogorov-Smirnov para hacer el contraste a nivel <span class="math inline">\(\alpha\)</span>. El verdadero nivel de significación, ¿es mayor o menor que <span class="math inline">\(\alpha\)</span>?</p>
 <p><strong>Solución</strong></p>
-<p>El nivel de significación será por lo general menor, porque nosotros estamos suponiendo que es igual a una normal de media y distribución de parámetros estimados; que son diferentes a los ideal desconocidos.</p>
-<p>Vamos a proceder a poner un ejmplo para los datos que ya hemos calculado, para ello tengamos presente que uno de los atributos de <code>ks.test</code> es el p-valor; la probabilidad de aceptar la hipótesis nula cuando esta es verdadera. Por otra parte se tiene que el nivel de significación <span class="math inline">\(\alpha\)</span> es la probabilidad de rechazar la hipótesis nula siendo verdadera.</p>
-<p>Por lo que <span class="math inline">\(\alpha = 1 - p-\)</span>valor.</p>
+<p>El nivel de significación <span class="math inline">\(\alpha\)</span> es la probabilidad de rechazar la hipótesis nula siendo verdadera, será por lo general menor, porque nosotros estamos suponiendo que es igual a una normal de media y varianza estimadas; que son diferentes a los parámetros ideales <em>desconocidos</em>.</p>
+<p>Como ejemplo de cómo efecta la estimación de parámetros mostraré cómo varía el p-valor;<br>
+la probabilidad de aceptar la hipótesis nula cuando esta es verdadera. Por la misma explicación anterior, ahora para los parámetros estimados el p-valor debería de ser mayor que para los fijos <em>ideales</em>. Este valor es uno de los atributos de <code>ks.test</code>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>ksnoest_alpha <span class="ot">&lt;-</span> <span class="cf">function</span>(datos){</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    p_value <span class="ot">&lt;-</span> <span class="fu">ks.test</span>(datos,pnorm)<span class="sc">$</span>p</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="dv">1</span> <span class="sc">-</span> p_value)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(p_value)</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>ksest_alpha <span class="ot">&lt;-</span> <span class="cf">function</span>(datos){</span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    mu <span class="ot">&lt;-</span> <span class="fu">mean</span>(datos)</span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    stdev <span class="ot">&lt;-</span> <span class="fu">sd</span>(datos)</span>
 <span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    p_value <span class="ot">&lt;-</span> <span class="fu">ks.test</span>(datos, pnorm, <span class="at">mean=</span>mu, <span class="at">sd=</span>stdev)<span class="sc">$</span>p</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="dv">1</span> <span class="sc">-</span> p_value)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(p_value)</span>
 <span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>significacion_sin_estimar <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">apply</span>(samples, <span class="dv">2</span>, ksnoest_alpha))</span>
 <span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>significacion_estimada <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">apply</span>(samples, <span class="dv">2</span>,ksest_alpha))</span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="fu">sprintf</span>(<span class="st">'La media de nivel de signficación (para ksnoest) sin estimar los parámetros es %.4f.'</span>, significacion_sin_estimar)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="fu">sprintf</span>(<span class="st">'La media del (para ksnoest) sin estimar los parámetros es %.4f.'</span>, significacion_sin_estimar)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "La media de nivel de signficación (para ksnoest) sin estimar los parámetros es 0.4975."</code></pre>
+<pre><code>[1] "La media del (para ksnoest) sin estimar los parámetros es 0.5682."</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sprintf</span>(<span class="st">'La media de nivel de signficación para ksest es: %.4f.'</span>, significacion_estimada)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sprintf</span>(<span class="st">'La media de del p para ksest es: %.4f.'</span>, significacion_estimada)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "La media de nivel de signficación para ksest es: 0.2019."</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>veces_menor <span class="ot">=</span> significacion_sin_estimar <span class="sc">/</span> significacion_estimada <span class="sc">*</span> <span class="dv">100</span> </span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sprintf</span>(<span class="st">'Donde para el estimado es un  %.3f por ciento menor'</span>, veces_menor)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "Donde para el estimado es un  246.380 por ciento menor"</code></pre>
+<pre><code>[1] "La media de del p para ksest es: 0.7906."</code></pre>
 </div>
 </div>
 <p>Podemos observar como para parámetro estimado es menor en nuestro caso.</p>
 <p><strong>Apartado 4</strong>. Para resolver el problema se ha estudiado la distribución en el caso de muestras normales con parámetros estimados. Es lo que se conoce como contraste de normalidad de Kolmogorov-Smirnov-Lilliefors (KSL). Según la tabla del estadístico KSL, el nivel crítico para <span class="math inline">\(\alpha = 0.05\)</span> y <span class="math inline">\(n = 20\)</span> es <span class="math inline">\(0.190\)</span>. Esto significa que el porcentaje de valores de ksest mayores que <span class="math inline">\(0.19\)</span> en nuestra simulación debe ser aproximadamente del 5%. Compruébalo a partir de los resultados de los apartados anteriores.</p>
 <p><strong>Solución</strong></p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>nivel_critico <span class="ot">&lt;-</span> <span class="fl">0.19</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Sacamos en una lista los mayores</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>numero_de_mayores <span class="ot">&lt;-</span>  <span class="fu">length</span>(kest_results[kest_results <span class="sc">&gt;</span> nivel_critico])</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>porcentaje <span class="ot">&lt;-</span> <span class="dv">100</span> <span class="sc">*</span> numero_de_mayores <span class="sc">/</span> number_of_samples</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">'El porcentaje de mayores es '</span>, porcentaje)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>nivel_critico <span class="ot">&lt;-</span> <span class="fl">0.19</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Sacamos en una lista los mayores</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>numero_de_mayores <span class="ot">&lt;-</span>  <span class="fu">length</span>(kest_results[kest_results <span class="sc">&gt;</span> nivel_critico])</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>porcentaje <span class="ot">&lt;-</span> <span class="dv">100</span> <span class="sc">*</span> numero_de_mayores <span class="sc">/</span> number_of_samples</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">'El porcentaje de mayores es un '</span>, porcentaje, <span class="st">'%'</span> )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>El porcentaje de mayores es  0</code></pre>
+<pre><code>El porcentaje de mayores es un  5.2 %</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Podemos comprobarlo además haciendo </span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="fu">lillie.test</span>(samples)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Podemos comprobar el p valor además haciendo </span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">lillie.test</span>(samples)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Lilliefors (Kolmogorov-Smirnov) normality test
 
 data:  samples
-D = 0.0053819, p-value = 0.1729</code></pre>
+D = 0.0041207, p-value = 0.5647</code></pre>
 </div>
 </div>
-<p><strong>Esto está mal debería ser 5%</strong></p>
 <p><strong>Apartado 5</strong>. Haz una pequeña simulación para aproximar el nivel de significación del contraste KSL cuando se utiliza un valor crítico 0.12 para muestras de tamaño 40.</p>
 <p><strong>Solución</strong></p>
 <p>Planteamiento de la simulación. Para aproximar el nivel de significación lo que haremos será generar <code>number_of_samples &lt;- 1000</code> muestras de tamaño <code>sample_size &lt;- 40</code>. Calcularemos el porcentaje esas muestras se quedan por encima del valor crítico <code>nivel_critico &lt;- 0.12</code></p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>nivel_critico <span class="ot">&lt;-</span> <span class="fl">0.12</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>number_of_samples <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>sample_size <span class="ot">&lt;-</span> <span class="dv">40</span></span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>samples <span class="ot">&lt;-</span>  <span class="fu">matrix</span>(</span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>   <span class="fu">rnorm</span>( number_of_samples <span class="sc">*</span> sample_size),</span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>   <span class="at">nrow =</span> number_of_samples</span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>kest_results <span class="ot">&lt;-</span> <span class="fu">apply</span>(samples,<span class="dv">2</span>, ksest)</span>
-<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>numero_de_mayores <span class="ot">&lt;-</span>  <span class="fu">length</span>(kest_results[kest_results <span class="sc">&gt;</span> nivel_critico])</span>
-<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>porcentaje <span class="ot">&lt;-</span> <span class="dv">100</span> <span class="sc">*</span> numero_de_mayores <span class="sc">/</span> number_of_samples</span>
-<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">'El porcentaje de mayores es '</span>, porcentaje)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Parámetros</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>nivel_critico <span class="ot">&lt;-</span> <span class="fl">0.120</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>number_of_samples <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>sample_size <span class="ot">&lt;-</span> <span class="dv">40</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>times_repeating_experiment <span class="ot">=</span> <span class="dv">50</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Variables auxiliares</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>porcentaje <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>times_repeating_experiment){</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>  samples <span class="ot">&lt;-</span>  <span class="fu">matrix</span>(</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>     <span class="fu">rnorm</span>( number_of_samples <span class="sc">*</span> sample_size),</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>     <span class="at">nrow =</span> number_of_samples</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>  kest_results <span class="ot">&lt;-</span> <span class="fu">apply</span>(samples,<span class="dv">1</span>, ksest)</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>  numero_de_mayores <span class="ot">&lt;-</span>  <span class="fu">length</span>(kest_results[kest_results <span class="sc">&gt;</span> nivel_critico])</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>  porcentaje <span class="ot">&lt;-</span>  <span class="fu">rbind</span>(porcentaje,numero_de_mayores <span class="sc">/</span> number_of_samples)</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">'El porcentaje de mayores es de media'</span>, <span class="fu">mean</span>(porcentaje)<span class="sc">*</span><span class="dv">100</span>, <span class="st">'%'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>El porcentaje de mayores es  0</code></pre>
+<pre><code>El porcentaje de mayores es de media 15.084 %</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">'</span><span class="sc">\n</span><span class="st">Es decir alpha es approximadamente '</span>, porcentaje<span class="sc">/</span><span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">'</span><span class="sc">\n</span><span class="st">Es decir alpha es approximadamente '</span>,<span class="fu">mean</span>(porcentaje), <span class="st">' +-'</span>, <span class="fu">sd</span>(porcentaje))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-Es decir alpha es approximadamente  0</code></pre>
+Es decir alpha es approximadamente  0.15084  +- 0.01225305</code></pre>
 </div>
 </div>
+<p>Si observamos la tablas de KOLMOGOROV‐SMIRNOV, para <span class="math inline">\(n=40\)</span> y nivel crítico <span class="math inline">\(0.1204\)</span> se tiene que <span class="math inline">\(\alpha = 0.15\)</span>.</p>
 </section>
 
 </main>

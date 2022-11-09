@@ -49,11 +49,14 @@ cat('El error típico de remuestreo es ', et)
 
 
 **Apartado 2** Compara el resultado con el error típico que darías si, por ejemplo, supieras que los datos proceden de una distribución normal.
+
 **Solución**
+
 Bajo hipótesis de normalidad podría aplicarse el lema de Fisher, que dice así: 
 
 Sean $X_1,X_2, \ldots, X_n$ variables aleatorias independientes e identicamente distribuidas de una normal $\mathcal{N}(\mu, \sigma^2)$.
 Entonces: 
+
 \begin{enumerate}
 \item $\bar X$ y $S^2$ son independientes. 
 \item 
@@ -83,18 +86,29 @@ Var\left(  S^2 \right)
 = 
 \frac{2 \sigma^4}{n-1}.
 $$
-Por el apartado anterior $\sigma$ puede ser estimada con $S$, por lo que finalmente podemos concluir que 
+Por el apartado anterior, $\sigma$ puede ser estimada con $S$, por lo que finalmente podemos concluir que 
 
 $$
-\hat{Vat(S^2)} 
+\widehat{Var(S^2)} 
 = 
 \frac{2 S^4}{n-1}
-$$
+$$ {#eq-var-et}
+
 ```{r}
 # El estimador de la varianza de una normal
-2*(varianza ^4)/(size - 1)
+et_2 <- 2*(varianza ^2)/(size - 1)
+cat('Var(S^2) aprox ',et_2)
+cat('\nEl erro típico es ', sqrt(et_2))
 ```
-Notemso que esto solo se puede utilizar para una normal. 
+Notemos que esto solo se puede utilizar para una normal. 
+
+Además si comparamos los resultados con los del apartado primero,
+vemos que conocida la normal, la estimación del error típico es mayor;
+ algo esperable ya que analizando la  @eq-var-et, a mayor tamaño de muesta menor varianza y en nuestro caso
+tenemos una muestra relativamente pequeña.
+
+Como moraleja, a pequeños tamaños de muestra no deberíamos de fiarnos en exceso del resultado boostrap
+(y ojo, tengamos presente que nuestro error típico procede de una estimación). 
 
 **Apartado 3** Calcula un intervalo de confianza para $\sigma^2$
  usando el método bootstrap híbrido. Fija $1 - \alpha = 0.95$.
@@ -156,7 +170,8 @@ $$
 $$
 
 
-Puesto que $H_n$ no es conocido los sustituiremos por el estimador de *bootstrap* $\hat H_n$ y es el llamado 
+Puesto que $H_n$ no es conocido los sustituiremos por el estimador de *bootstrap* $\hat H_n$ (que será la función `quantile` definida en R)
+y es el llamado 
 *método híbrido*. 
 
 
@@ -200,27 +215,24 @@ for(i in 1:repeticiones_experimento){
   )
 
   varianzas_bootstrap = apply(muestras_boostrap, 1, var)
-  
   muestras_normalizadas <- sqrt(B)*(varianzas_bootstrap - varianza)
-
-  
   ic_min <-varianza - quantile(muestras_normalizadas, 1-a/2)/sqrt(B)
-  
   ic_max <-varianza - quantile(muestras_normalizadas, a/2)/sqrt(B)
-  
   intervalo <- rbind(intervalo, c(ic_min, ic_max))
+   acierto <- c(acierto, ic_min < varianza & ic_max > varianza)
 }
 
 df <- data.frame(
   ic_min <-intervalo[, 1],
   ic_max <- intervalo[, 2],
-  ind = 1:numero_remuestreos
+  ind = 1:numero_remuestreos,
+  acierto = acierto
 )
-df
 
 
 ggplot(df) +
-  geom_linerange(aes(xmin = ic_min, xmax = ic_max, y = ind)) +
+  geom_linerange(aes(xmin = ic_min, xmax = ic_max, y = ind, col = acierto)) +
+  scale_color_hue(labels = c("SÍ", "NO")) +
   geom_vline(aes(xintercept = varianza), linetype = 2) + 
   theme_bw() + 
   labs( y= 'Muestras', x = 'Intervalos (nivel de confianza 0.95))', 
