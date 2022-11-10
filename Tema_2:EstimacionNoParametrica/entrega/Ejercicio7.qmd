@@ -72,7 +72,7 @@ miembros (2) resulta:
 $$
 Var\left( \frac{n-1}{\sigma^2} S^2 \right) = Var(\chi^2_{n-1})
 $$
-que por las propiedades de la variaza y que $var(\chi^2_{k}) = 2k$ se tiene 
+que por las propiedades de la varianza y que $var(\chi^2_{k}) = 2k$ se tiene 
 
 $$
   \frac{(n-1)^2}{\sigma^4}

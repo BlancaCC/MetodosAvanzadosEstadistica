@@ -1,4 +1,4 @@
-#Ejercicio 15 
+# Ejercicio 15 
 
 Considera una variable aleatoria con distribución beta de parámetros 
 $\alpha = 3, \beta = 6$. 
@@ -37,7 +37,7 @@ ggplot() +
                 fill = "blue", alpha = 0.25) + 
   stat_function(fun = pbeta, args = list(shape1 = a, shape2= b)) + 
   labs(x = "\n x", y = "f(x) \n", 
-       title = "Función de probabilidad de una beta a=3, b =6 \n") 
+       title = "Función de distribución de una beta a=3, b =6 \n") 
 
 ```
 
@@ -78,26 +78,31 @@ K <- function(x) dnorm(x,0,1) # Utilizaremos un núcleo gaussiano
 f <- function(x, our_sample = sample){
   sample_size = length(our_sample)
   return (sum(map_dbl(our_sample, function(xi)(K((x-xi)/h))))/(h*sample_size))
-} 
+}
+f_vectorial <- function(x, s) c(map(x, function(y)f(y,s)))
 
 x <- seq(0,1,0.01)
 y <- map_dbl(x,f)
 estimador_nucleo<- density(sample) # versión de R
 
-colors <- c("Densidad real" = "blue", "Densidad propia" = "violet", "Density by R" = "orange")
+colors <- c("Densidad real" = "blue", 
+            "Densidad propia" = "violet",
+            "Density by R" = "orange")
 
 # Densidad propia 
 df <- data.frame(x=x, y=y)
 ggplot(data = df, aes(x, y, color = "Densidad propia")) +
   geom_line() +
-  stat_function(fun = dbeta, args = list(shape1 = a, shape2= b), aes(color = "Densidad real"))+
+  stat_function(fun = dbeta, args = list(shape1 = a, shape2= b),
+                aes(color = "Densidad real"))+
   scale_color_manual(values = colors)
 
 # Densidad de R
 df <- data.frame(x = estimador_nucleo$x, y = estimador_nucleo$y)
 ggplot(data = df, aes(x, y, color = "Density by R")) +
   geom_line() +
-  stat_function(fun = dbeta, args = list(shape1 = a, shape2= b), aes(color = "Densidad real"))+
+  stat_function(fun = dbeta, args = list(shape1 = a, shape2= b),
+                aes(color = "Densidad real"))+
   scale_color_manual(values = colors)
 
 
@@ -106,11 +111,11 @@ ggplot(data = df, aes(x, y, color = "Density by R")) +
   
 ```{r}  
   ## Función de distribución y la empírica 
-  # Función de disribución a partir de la muestra 
+  # Función de distribución a partir de la muestra 
 F <- function (x, X=sample){
     n = length(X)
     lower = length(X[X <= x])
-    return (lower / sample_size)
+    return (lower / n)
 }
 F_vectorial <- function (vector_of_x,X = sample){
   lower_vector <- NULL
@@ -125,23 +130,14 @@ ggplot() +
                 geom = "area", 
                 fill = "blue", alpha = 0.25) + 
   stat_function(fun = pbeta, args = list(shape1 = a, shape2= b)) +
-  geom_function(fun = F_vectorial, aes(colour = "Función de distribución empírica")) + 
+  geom_function(fun = F_vectorial, 
+                aes(colour = "Función de distribución empírica")) + 
   xlim(0,1) +
   labs(x = "\n x", y = "f(x) \n", 
-       title = "Función de probabilidad de una beta a=3, b =6 \n") 
+       title = "Función de distribución de una beta a=3, b =6 \n") 
 
 ```
-```{r}
- x <- sample[order(sample)]
-y <- map_dbl(x, F)
 
-plot(x,y, type='s')
-df <- data.frame(x = x,y=y)
-
-ggplot(data = df, aes(x, y)) +
-geom_step()+
-geom_point()
-```
 **Apartado 3**
 Verifica empíricamente el grado de aproximación alcanzado en las estimaciones de $F$ y $f$.
 Para ello, genera 200 muestras de tamaño 20 y para cada una de ellas evalúa el error (medido en la norma del supremo, es decir, el máximo de las diferencias entre las funciones) cometido al aproximar 
@@ -158,8 +154,48 @@ samples_matrix <- matrix(
 )
 
 # Estimamos
+error_f_opt <- NULL
+error_f <- NULL
+error_F <- NULL
+error_fr<- NULL
 
-apply(samples_matrix, 1, function(x)(norm(x, 'I')))
-help(density)
+dominious = seq(0,1,0.05)
+for(i in 1:number_of_samples){
+  # Error de la función de densidad 
+  diferencef <-function(x) (abs(f(x, samples_matrix[i, ]) - pbeta(x, a,b)))
+  error_f <- rbind(error_f,max(unlist(map(dominious, diferencef))))
+  # Densididad de R
+  dr <- density(samples_matrix[i, ])
+  error_fr <-rbind(error_fr, max(abs(dr$y - pbeta(dr$x, a,b))))
+  # Función de distribución 
+  diferenceF <-function(x) (abs(F_vectorial(x, samples_matrix[i, ]) - dbeta(x, a,b)))
+  error_F <- rbind(error_F, 
+                   max(unlist(diferenceF(dominious)))
+                   )                   
+}
+
+
+# Mostramos los resultados
+## ¡Error en la función de densidad 
+media_f <- mean(c(error_f))
+std_f <- sd(c(error_f))
+cat("El error de la función de densidad propia diferencia con la real es de",
+    media_f , "+-", std_f)
+
+## ¡Error en la función de densidad calculada con r
+media_fr <- mean(c(error_fr))
+std_fr <- sd(c(error_fr))
+cat("\nEl error de la función de densidad de r  con la real es de",
+    media_fr, '+-', std_fr)
+## Distribución empírica
+media_F <- mean(c(error_F))
+std_F <- sd(c(error_F))
+cat("\nEl error de la función de distribución empírica con la real es de",
+    media_F, '+-', std_F)
+
 
 ```
+
+Podemos apreciar que el error de la implementación nuestra es en media mejor
+(aunque abría que realizar un test para poder afirmarlo), esto puede deberse
+a que hemos ejecutado la función `density` sin buscar hiperparámetros mejores. 

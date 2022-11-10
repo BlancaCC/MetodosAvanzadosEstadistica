@@ -31,7 +31,7 @@ colnames(gapminder)
 
 Un histograma de la esperanza de vida en 2007 de los países de Europa.
 
-#### Solución 
+#### Solución
 
 ```{r}
 life_countries <- gapminder %>%
@@ -42,8 +42,7 @@ life_countries <- gapminder %>%
   select(country, lifeExp) 
 ```
 
-Es necesario inicar cuántas barras van a ser necesaras en nuestro histograma, 
-para ello hemos optado por una barra por año, esto es calculado con 
+Es necesario inicar cuántas barras van a ser necesaras en nuestro histograma, para ello hemos optado por una barra por año, esto es calculado con
 
 ```{r}
 # In order to know the number of bin calc maximum and minimum
@@ -55,7 +54,7 @@ number_of_bin <- ceiling(
 ) 
 ```
 
-A continuación mostramos el código del histograma: 
+A continuación mostramos el código del histograma:
 
 ```{r}
 ggplot(data=life_countries) +
@@ -161,13 +160,11 @@ Para cada uno de ellos se observa si tienen o no la enfermedad.
 
 #### Abstracción del problema 3
 
-Sea $W_{i j}$ la variable aleatoria que indica si el sujeto del estrato $i \in \{1,2\}$ y $j \in \{1,\ldots, n_i\}$
-Se tiene que la variable aleatoria sigue una distribución de Bernouilli de parámetro $p_i$ esto es 
-$W_{i j} \sim \text{Bernouilli}(p_i)$. 
+Sea $W_{i j}$ la variable aleatoria que indica si el sujeto del estrato $i \in \{1,2\}$ y $j \in \{1,\ldots, n_i\}$ Se tiene que la variable aleatoria sigue una distribución de Bernouilli de parámetro $p_i$ esto es $W_{i j} \sim \text{Bernouilli}(p_i)$.
 
 Notemos que para ambos estratos estamos ante una distribución binomial, donde:
 
-Denotaremos como $X = \sum^{n_1}_{j=1}W_{1 j}  \sim Bin(60, p_1)$ a la variable aleatorio que indica el número de individuos enfermos dentro del estrato (1) y como $Y = \sum^{n_2}_{j=1} W_{2 j} \sim Bin(90, p_2)$ la variable aleatorio que indica el número de individuos enfermos dentro del estrato (2).
+Denotaremos como $X = \sum^{n_1}_{j=1}W_{1 j} \sim Bin(60, p_1)$ a la variable aleatorio que indica el número de individuos enfermos dentro del estrato (1) y como $Y = \sum^{n_2}_{j=1} W_{2 j} \sim Bin(90, p_2)$ la variable aleatorio que indica el número de individuos enfermos dentro del estrato (2).
 
 Ambas variables son independientes.
 
@@ -179,7 +176,7 @@ A partir de $\hat{p}_i$ la proporción muestral de inividuos enfermos en estrato
 
 Comenzaremos aprenciando que $\hat p_i$ para todo $i \in \{1,2\}$ es un estimador insesgado, ya que la media lo es:
 
-Sea  $\hat p_i = n_i^{-1} \sum_{j = 1}^{n_i} W_{i j} = \bar W$
+Sea $\hat p_i = n_i^{-1} \sum_{j = 1}^{n_i} W_{i j} = \bar W$
 
 $$E\bar{W} = E\left[ n^{-1} \sum_{i=1}^n W_i \right]= n^{-1} \sum_{i=1}^n EW_i = p_i.$$
 
@@ -190,9 +187,7 @@ $$
   E\hat{p}_1 = p_1 \text{ y } E\hat{p}_2 = p_2.
 $$
 
-Además por cómo está distribuida la población se tiene que la prevalencia
-en la población total puede calcularse a partir de la prevalencia
-en cada uno de los estratos como: 
+Además por cómo está distribuida la población se tiene que la prevalencia en la población total puede calcularse a partir de la prevalencia en cada uno de los estratos como:
 
 $$
 \tag{3.2}
@@ -233,7 +228,7 @@ En función de $p_1$ y $p_2$ calcula la varianza del estimador $T$.
 
 #### Solución propuesta apartado 3.
 
-De la independencia de X e Y se deduce que:   
+De la independencia de X e Y se deduce que:
 
 $$
 \tag{3.4}
@@ -253,7 +248,6 @@ Var(0.4 n_1^{-1}X_1 + 0.6 n_2^{-1} X_2)
 \end{split}
 $$
 
-
 Que por tratarse de una binomial será de la forma
 
 $$
@@ -262,7 +256,6 @@ Var(X_i) = n_i p_i(1-p_i).
 $$
 
 sustituyendo (3.5) en (3.4) resulta:
-
 
 $$
 \tag{3.6} 
@@ -298,11 +291,7 @@ Var(\hat \theta_1)
 Var(\hat \theta_2).
 $$
 
-
-Si $p_1 = p_2$ entonces ambos tendrían la misma distribución, 
-es decir $X \sim B(n_1, p_1)$ y $Y \sim B(n_2, p_1)$. 
-Además la variable aleatoria que no tiene encuentra los estratos es la 
-suma de las dos, esto es:
+Si $p_1 = p_2$ entonces ambos tendrían la misma distribución, es decir $X \sim B(n_1, p_1)$ y $Y \sim B(n_2, p_1)$. Además la variable aleatoria que no tiene encuentra los estratos es la suma de las dos, esto es:
 
 $$
 X + Y \sim B(n_1+n_2, p_1) = B(n, p_1).
@@ -314,16 +303,13 @@ $$
   p = 0.4p_1 + 0.6 p_2 =   0.4p_1 + 0.6 p_1 = p_1.
 $$
 
-Por lo que $Z$ la variable aleatoria que contiene el número de enfermos en toda la población vendría dada como: 
+Por lo que $Z$ la variable aleatoria que contiene el número de enfermos en toda la población vendría dada como:
 
 $$
 Z = X + Y \sim B(n, p_1) = B(n,p).
-$$
-Si el estimador sigue siendo el promedio entonces 
+$$ Si el estimador sigue siendo el promedio entonces
 
-$$\hat p = n^{-1} \sum_{i=1, j=1}^{2,n_i} W_{i j} = n^{-1}(X+Y)$$
-Y su varianza vendría determinada por
-$$
+$$\hat p = n^{-1} \sum_{i=1, j=1}^{2,n_i} W_{i j} = n^{-1}(X+Y)$$ Y su varianza vendría determinada por $$
 \tag{3.7}
 \begin{split}
 Var(n^{-1}(X+Y)) 
@@ -335,8 +321,7 @@ n^{-2} n p  (1-p)
 &=
 \frac{1}{150}p  (1-p).
 \end{split}
-$$ 
-Si hacemos $p_1 = p_2 = p$ en la varianza del estimador estratificada $Var(T)$ obtenida en $(3.6)$ resulta 
+$$ Si hacemos $p_1 = p_2 = p$ en la varianza del estimador estratificada $Var(T)$ obtenida en $(3.6)$ resulta
 
 $$
 \tag{3.8} 
@@ -366,8 +351,7 @@ Var(T)
  \end{split}
 $$
 
-Como podemos observar $(3.7)$ y $(3.8)$ dan lugar a la misma varianza, luego podemos afirmar que una no es más eficiente que otra
-en el caso $p_1 = p_2$. 
+Como podemos observar $(3.7)$ y $(3.8)$ dan lugar a la misma varianza, luego podemos afirmar que una no es más eficiente que otra en el caso $p_1 = p_2$.
 
 ### Apartado 3.4
 
@@ -375,10 +359,9 @@ Supongamos que diez de cada cien personas mayores de 30 años tiene la enfermeda
 
 #### Solución propuesta apartado 3
 
-La eficiencia es un indicador de precisión, cuando menor sea la varianza menor será los errores medios cometidos. 
-Planteamos por tanto la función diferencia de varianzas: 
+La eficiencia es un indicador de precisión, cuando menor sea la varianza menor será los errores medios cometidos. Planteamos por tanto la función diferencia de varianzas:
 
-Teniendo presente $(3.2)$ y $(3.7)$ tenemos que  
+Teniendo presente $(3.2)$ y $(3.7)$ tenemos que
 
 $$
 \tag{3.9}
@@ -393,10 +376,9 @@ $$
   &=
   \frac{1}{150}(0.4 p_1 + 0.06) (1 - (0.4 p_1 + 0.06))
 \end{split}
-$$
-donde $(3.9)$ puede verse como una función dependiente de $p_1$. 
+$$ donde $(3.9)$ puede verse como una función dependiente de $p_1$.
 
-Sustituyendo $p_2 = 0.1$ en $(3.6)$ obtenemos la siguiente función dependiente de $p_1$: 
+Sustituyendo $p_2 = 0.1$ en $(3.6)$ obtenemos la siguiente función dependiente de $p_1$:
 
 $$
 \tag{3.10} 
@@ -439,9 +421,7 @@ diferencia(p_1)
  &=
  0.0016p_1^2-0.00032p_1+0.000016.
 \end{split}
-$$
-A la vista de $(3.11)$ podemos ver que 
-$$
+$$ A la vista de $(3.11)$ podemos ver que $$
 \tag{3.12}
 \begin{split}
 \frac{\partial}{\partial p_1}diferencia(p_1) 
@@ -451,8 +431,7 @@ $$
 &= 
  \frac{\partial}{\partial p_1} 0.0032p_1-0.00032
 \end{split}
-$$
-alcanza un mínimo en $p_1 = 0.1$ cuyo valor es 
+$$ alcanza un mínimo en $p_1 = 0.1$ cuyo valor es
 
 $$
 \begin{split}
@@ -466,9 +445,8 @@ diferencia(p_1 =0.1)
  &=
 0.
 \end{split}
-$$
-Es decir, salvo en $p_1 = 0.1$ que sería indiferente,  para el resto de casos es mejor usar el estimador estratificado. 
-(Notemos además que este es el caso en que $p_1 = p_2$ del apartado anterior). 
+$$ Es decir, salvo en $p_1 = 0.1$ que sería indiferente, para el resto de casos es mejor usar el estimador estratificado. (Notemos además que este es el caso en que $p_1 = p_2$ del apartado anterior).
+
 ```{r}
 library(latex2exp)
 diferencia<- function (p_1){
@@ -567,7 +545,7 @@ $$
 \tag{7.1}
 L(\theta) = 
 - \sum_{i=1}^n \log(1 + (x_i - \theta)^2)
-$$ 
+$$
 
 y minimizaremos numéricamente con R el opuesto de (7.1):
 
@@ -609,23 +587,15 @@ plot(
 
 ```
 
-Como podemos observar se ha encontrado un mínimo en $\theta^*= 9.842954$ 
-relativamente próximo al valor real $\theta = 10$ .
+Como podemos observar se ha encontrado un mínimo en $\theta^*= 9.842954$ relativamente próximo al valor real $\theta = 10$ .
 
-Cabe destacar que deberíamos maximizar $L$ en todo $\mathbb R$, para poder 
-encontrar el EMV, algo computacionalmente imposible con este procedimiento.
-Por lo que apriori si somos estrictos estariamos tan solo frente a 
-un máximo local. 
+Cabe destacar que deberíamos maximizar $L$ en todo $\mathbb R$, para poder encontrar el EMV, algo computacionalmente imposible con este procedimiento. Por lo que apriori si somos estrictos estariamos tan solo frente a un máximo local.
 
 ¿Cómo se podría demostrar entonces que se trata de un máximo global?
 
-1. De manera analítica, por la monotomía del logaritmo es fácil ver que para valores 
-menores de $-100$ y mayores de $100$ (valores concretos de nuestro intervalo de búsqueda)
-la función que estamos minimizando va a seguir creciendo por los lados. 
+1.  De manera analítica, por la monotomía del logaritmo es fácil ver que para valores menores de $-100$ y mayores de $100$ (valores concretos de nuestro intervalo de búsqueda) la función que estamos minimizando va a seguir creciendo por los lados.
 
-2. Se podría plantear un intervalo de confianza. Puesto que estamos con una 
-distribución de Cauchy y no existe su media habría que hacerlo con la mediana. 
-
+2.  Se podría plantear un intervalo de confianza. Puesto que estamos con una distribución de Cauchy y no existe su media habría que hacerlo con la mediana.
 
 ### Apartado 7.2
 
