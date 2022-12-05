@@ -1,0 +1,72 @@
+
+```{R}
+library(magrittr)
+library(dplyr)
+library(purrr)
+```
+
+````{R}
+
+natalidad <- read.table("https://verso.mat.uam.es/~joser.berrendero/datos/natalidad.txt", header = TRUE) %>% 
+  mutate(log_pnb = log(pnb))
+
+head(natalidad)
+```
+
+Se desea estudiar la esperanza de vida de los hombres como función lineal de la tasa de natalidad, la tasa de mortalidad infantil y el logaritmo del producto nacional bruto. Para ello se ajusta un modelo de regresión lineal múltiple, con los resultados siguientes:
+
+```{R}
+reg <- lm(esph ~ nat  + mortinf + log_pnb, data = natalidad)
+summary(reg)
+```
+
+## ¿De cuántos países consta la muestra utilizada?
+
+Cada fila se corresponde con un país distinto luego habrá:  
+
+```{R}
+nrow(natalidad)
+```
+
+## ¿Cuánto vale la suma de cuadrados que se utiliza para medir la variabilidad explicada por las tres variables regresoras?
+
+Se busca calcular la suma de cuadrados explicada que se calcula como 
+
+$$
+SCE 
+=
+\sum_{i=1}^n
+\left(
+\hat{Y}_i - \bar{Y}
+\right)^2.
+$$
+
+Este dato no aparece directamente en el *sumary* del la regresión lineal, luego habrá que calcularlo de manera manual. 
+
+```{R}
+media_natalidad <- mean(natalidad$nat)
+
+p <- predict(reg, natalidad)
+SCE <- Reduce('+',map(p, function(y_hat) (y_hat - media_natalidad)^2))
+cat("La suma de cuadrados resultante es",SCE, '\n')
+```
+
+
+## ¿Cuánto vale la varianza muestral de la variable respuesta ?
+
+Esta se define como 
+$$
+VMR = \frac{1}{n-1}\sum_{i=1}^n
+(Y_i - \bar Y)^2
+$$
+
+Que por definición de la suma de cuadrados total equivale a coonocer la suma de cuadrados total (SCT)
+
+$$
+VMR = \frac{SCT}{n-1}
+$$
+
+Sabiendo que el coeficiente de determinación viene dado por 
+$$
+R^2 = \frac{SCE}{SCT}
+$$
