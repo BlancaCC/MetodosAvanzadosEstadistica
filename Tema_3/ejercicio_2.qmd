@@ -25,7 +25,8 @@ summary(reg)
 Cada fila se corresponde con un país distinto luego habrá:  
 
 ```{R}
-nrow(natalidad)
+n <- nrow(natalidad)
+n
 ```
 
 ## ¿Cuánto vale la suma de cuadrados que se utiliza para medir la variabilidad explicada por las tres variables regresoras?
@@ -68,5 +69,18 @@ $$
 
 Sabiendo que el coeficiente de determinación viene dado por 
 $$
-R^2 = \frac{SCE}{SCT}
+r^2 = \frac{SCE}{SCT}
 $$
+
+Este valor se puede calcular como gracias a la información provista por el resumen de la regresión lineal
+
+$$
+r^2 = (\text{Multiple R-squared})^2 = 0.9^2 = 0.81.
+$$
+
+```{R}
+r_squared <- (summary(reg)$adj.r.squared)^2
+SCT <- SCE * r_squared
+VMR = SCT/(n-1)
+cat('VMR = ', VMR)
+```
