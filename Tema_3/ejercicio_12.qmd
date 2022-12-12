@@ -1,0 +1,166 @@
+# Ejercicio 12  
+
+Se generan los siguientes dos conjuntos de datos: 
+
+```{r}
+library(purrr)
+library(ggplot2)
+```
+
+```{r}
+n <- 100
+sigma_1 <- 0.5
+sigma_2 <- 1
+
+fun_reg <- function (x) (x^2*sin(x))
+
+generator <- function (n, sigma) {
+  error <- rnorm(n)
+  unif <- runif(n, min = -pi, max = pi)
+  Y <- (
+    unif*unif
+    *
+    sapply(unif, sin)
+    +
+    sigma * error
+  )
+  
+  return (
+    data.frame(
+      X= unif,
+      Y = Y
+    )
+  )
+  
+}
+X_1 <- generator(n, sigma_1)
+X_2 <- generator(n, sigma_2)
+```
+
+## Representación gráfica  
+
+```{r}
+
+p <- ggplot(X_1) + 
+  geom_point( aes(X, Y), colour = 'black' )+
+  ggtitle('Datos con sigma = 0.5') +
+  geom_function(fun = 'fun_reg', linetype = 2)
+  
+q <- ggplot(X_2) + 
+  geom_point( aes(X, Y), colour = 'black' )+
+  ggtitle('Datos con sigma = 1') +
+  geom_function(fun = 'fun_reg', linetype = 2)
+p
+q
+```
+
+Puede verse como el sigma aumenta la dispersión respecto al eje Y.
+
+## Ajuste de regresión de mínimos cuadrados  
+
+Para cada conjunto de datos se pretende ajustar una regresión de mínimos cuadrados penalizada prefijando 
+uno de los grados de libertad efectivos. 
+
+## Representación gráfica del error de predicción de validación cruzada generalizando en dunción de los grados de liberta utilizados. 
+
+Imprimimos primero algunos ajustes: 
+```{r}
+pinta_spline <- function (X, grados_libertad){
+spline_1 <- smooth.spline(
+  X$X, X$Y, df = grados_libertad
+)
+datos <- data.frame(
+  x = X$X,
+  y = X$Y,
+  xfit = spline_1$x,
+  yfit = spline_1$y
+)
+
+titulo <- paste('Spline con df = ', grados_libertad)
+ggplot(datos) +
+  geom_point(aes(x, y)) + 
+  geom_line(aes(xfit, yfit), color="blue", size = 1.1) +
+  geom_function(fun = 'fun_reg', linetype = 2) +
+  ggtitle(titulo) 
+}
+
+for( df in c(2,7,10, 25) ){
+  print(pinta_spline(X_1, df))
+}
+
+```
+Bajo una inspección visual puede verse que a  mayor número de grados de libertad mejor es el ajuste a los datos utilizados en regresión c, procedamos a costatarlo 
+
+```{r}
+cv_error <- function (X, grados_libertad){
+  spline_1 <- smooth.spline(
+    X$X, X$Y, df = grados_libertad
+  )
+  return (spline_1$cv.crit)
+}
+
+df <- c(3:25)
+datos <- data.frame(
+  x = df,
+  y1 = sapply(df, function(d)(cv_error(X_1, d))),
+  y2 = sapply(df, function(d)(cv_error(X_2, d)))
+) 
+
+ggplot(datos) +
+  geom_line(aes(x, y1, color="sigma = 0.5"), size = 1.1) +
+  geom_line(aes(x, y2, color="sigma = 1") , size = 1.1) +
+  labs(title = 'Error y grados de libertad',
+       x = 'Grados de libertad',
+       y = 'Error de validación cruzada en predicción')
+
+cat("Pasa sigma = 0.5 alcanza un mínimo en ", datos$x[which.min(datos$y1)], " grados de libertad.\n")
+cat("Pasa sigma = 1 alcanza un mínimo en ", datos$x[which.min(datos$y2)], " grados de libertad.\n")
+```
+
+
+## Comentario de los resultados
+
+Hay varios fenómenos llamativos al observa esta gráfica: 
+1. Comportamiento general: Decrece, alcanza un mínimo y vuelve a crecer en menor medida. 
+2. El que los dos gráficos parezcan más o menos desplazados.
+3. Que $\sigma$ menor admita más grados de libertad antes de volver a crecer el error. 
+4. Que la gráfica de $\sigma = 1$ comience a crecer más que la $\sigma = 0.5$. 
+
+Todos estos fenómenos se pueden explicar con la relación entre los errores vista en teoría: 
+
+$$
+\text{Error}_{Test}
+= 
+\text{Error}_{Training}
++ 
+\frac{2 \sigma^2}{n} \text{grados de libertad}. 
+$$
+(Notemos que grados de libertad se corresponde a la traza de la matriz $M$, que en nuestro caso particular se trata de los mínimos cuadrados)
+
+### Comportamiento general: Decrecemiento, mínimo y crecimiento más lento 
+Como rasgo general podemos observar como añadir más grados de libertad mejora el ajuste a los datos de *aprendizaje*,
+el error de *training* está decreciendo en mayor medida que el aumento de grados de libertad. 
+A partir de 10 (o 13 si $\sigma = 1$) grados puede verse cómo el error de test comienza a crecer de nuevo,
+este fenómeno conocido como *sobreajuste a los datos de entrenamiento* no es más que el error de training se disminuye en menor proporción que el peso que suma el término $\frac{2 \sigma^2}{n} \text{grados de libertad}$.
+
+### Gráficos desplazados  
+
+Esto está motivado por que los *datos training* de uno es mayor que la de otro. Este fenómenos es natural,
+ya que por la propia naturaleza de los datos sabemos que los datos de $\sigma = 1$ (la gráfica con mayor error)
+posee un ruido mayor (concretamente el de $\mathcal{N}(0,1)$)
+
+### A $\sigma$ menor admita más grados de libertad antes de volver a crecer el error.  
+
+Relacionado con lo anterior, si el *ruido* es menor será más similar a su desarrollo de Taylor admitiendo por tanto desarrollar más términos de la serie de Taylor (grados de libertad en nuestro caso). 
+
+
+###  Cremiento mayor del error de $\sigma = 1$ frente a  $\sigma = 0.5$  
+
+Esto es claro resultado del segundo sumando de la relación mostrada: 
+
+$$
+\frac{2 \sigma^2}{n} \text{grados de libertad}
+$$
+ya que en ambos caso $n$ y *grados de libertad* son iguales y solo difiere el valor de $\sigma$.
+
+
