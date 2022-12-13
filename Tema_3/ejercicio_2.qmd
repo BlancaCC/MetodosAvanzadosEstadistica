@@ -1,3 +1,4 @@
+# Ejercicio 2  
 
 ```{R}
 library(magrittr)
@@ -61,7 +62,7 @@ VMR = \frac{1}{n-1}\sum_{i=1}^n
 (Y_i - \bar Y)^2
 $$
 
-Que por definición de la suma de cuadrados total equivale a coonocer la suma de cuadrados total (SCT)
+Que por definición de la suma de cuadrados total equivale a conocer la suma de cuadrados total (SCT)
 
 $$
 VMR = \frac{SCT}{n-1}
@@ -84,3 +85,114 @@ SCT <- SCE * r_squared
 VMR = SCT/(n-1)
 cat('VMR = ', VMR)
 ```
+
+## Contraste de la complejidad del modelo
+
+Se desea que contrastar que $H_0 : \beta_1 = 0$  
+esto viene determinado por el sistema matricial $A$
+que es un vector fila con un uno en $1$ y el resto $0$.
+
+Debe de satisfacer que $A \beta = 0$.
+
+Definimos el modelo reducido $M0$ que resulta de imoner las restricciones de $H_0$.
+
+Bajo $H_0: A \beta = 0$ se verifica que 
+
+$$
+\frac{
+(SCR_0 - SCR) / k
+}{
+SCR / (n - p -1)
+}
+\equiv
+F_{k,n-p-1},
+$$
+donde $k$ es el número de restricciones (rango de $A$ ciertamente), $p+1$ el número de $\beta$ (variables del modelo a ajustar) y $n$ el número de observaciones.
+
+La región crítica del contraste para nivel $\alpha$ es
+
+$$
+R
+= 
+\left\{
+\frac{
+(SCR_0 - SCR) / k
+}{
+SCR / (n - p -1)
+}
+>
+F_{k,n-p-1}
+\right\}
+$$
+
+Utilizaremos el comando [`anova`](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/anova) para R. 
+
+
+## Contrasta a nivel $\alpha = 0.05$ la hipótesis nula $H_0 : \beta_1 = 0$  
+
+**Solución** 
+
+Al suponer que $\beta_1 = 0$ entonces ahora el modelo precindiría de natalidad, esto sería 
+```{r}
+reg0 <- lm(esph ~  mortinf + log_pnb, data = natalidad)
+```
+
+```{r}
+anova(reg0, reg)
+```
+De aquí deducimos que la región crítica 
+$F = 9.411$ y lo que buscábamos, que la probabilidad de pertenecer a la región crítica siendo la $H_0$ cierta es de
+
+$$
+Pr(>F) = 0.00285 
+$$
+
+Como $ 0.00285  < 0.05$ rechazamos entonces la hipótesis nula. 
+
+
+## Contrasta a nivel $\alpha = 0.05$ la hipótesis nula $H_0 : \beta_1 =  \beta_2 = \beta_3 =0$  
+
+Contrasteremos que solo se pueda aproximar con la media
+
+```{r}
+reg0 <- lm(esph ~ 1, data = natalidad) # ahora sería solo con la media
+anova(reg0, reg)
+```
+
+Como podemos observar, ahora 
+
+$$
+Pr(>F)   < 2.2e-16 
+$$
+
+
+es decir prácticamente $0$ luego se rechaza la hipótesis nula. 
+
+Ya que si la media fuera un buen estimador se podría pensar que los modelos no tienen nada que ver con el modelo.
+
+## Estima la correlación entre $\hat{\beta}_1$ y $\hat{\beta}_2$. 
+
+Esto se hará con el comando [`vcoc`](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/vcov) que devuelve la matriz de covarianza de los parámetros ajustados. 
+
+$\hat{\beta}_1$ se corresponde a `nat` y $\hat{\beta}_2$
+se corresponde con `mortinf` luego mirando la respectiva fila y columan tenemos que 
+
+```{r}
+vcov(reg)
+```
+
+$$
+cov(\hat{\beta}_1, \hat{\beta}_2)
+=
+-0.0004865478
+$$
+
+Puesto que el restultano es cercano a $0$ podemos pensar que el signo de una es independiente del de la otra, es decir independientes. 
+
+Por lo tanto apriori no podríamos explicar una varia con la otra con un modelo lineal.
+
+
+## Calcula intervalos de confianza al nivel $90\%$ para todos los $\beta_i$ del modelo.
+(Indicación: usa el comando confint)
+
+## Predice el valor de la esperanza de vida de los hombres en un país para el que el índice de natalidad es 29, la mortalidad infantil vale 50 y el logaritmo de su pnb vale 7. Calcula un intervalo de confianza del 95 % para el valor esperado de dicha variable.
