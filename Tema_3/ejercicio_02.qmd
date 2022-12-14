@@ -1,12 +1,14 @@
 # Ejercicio 2  
 
+Comenzaremos llamnado a las bibliotecas que utilizaremos a lo largo de este ejercicio y cargando los datos relevantes.  
 ```{R}
 library(magrittr)
 library(dplyr)
 library(purrr)
 ```
 
-````{R}
+
+```{R}
 
 natalidad <- read.table("https://verso.mat.uam.es/~joser.berrendero/datos/natalidad.txt", header = TRUE) %>% 
   mutate(log_pnb = log(pnb))
@@ -22,6 +24,7 @@ summary(reg)
 ```
 
 ## ¿De cuántos países consta la muestra utilizada?
+
 
 Cada fila se corresponde con un país distinto luego habrá:  
 
@@ -203,14 +206,20 @@ confint(reg, level=0.90)
 esto no da un rango de incertidumbre en el que puede oscilar cada uno de los respectivos parámetros con 
 un $90 \%$ de probabilidad. 
 
+
 $$
-\begin{align}
-&\beta_{0} \in [60.537, 71.365], \\
-&\beta_{\text{ nat}} \in [-0.225 -0.067], \\
-&\beta_{\text{mortinf}} \in [-0.158, -0.108], \\
-&\beta_{\text{ log_pnb }}  \in [0.396 , 1.493]. \\
-\end{align}
+\beta_{0} \in [60.537, 71.365],
 $$
+$$
+\beta_{\text{ nat}} \in [-0.225 -0.067], 
+$$
+$$
+\beta_{\text{mortinf}} \in [-0.158, -0.108], 
+$$
+$$
+\beta_{\text{ log pnb }}  \in [0.396 , 1.493].
+$$
+
 Ya 
 $$
 P( \beta_{inf} \leq \beta \leq \beta_{sup}) = 1 - \alpha.

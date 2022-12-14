@@ -1,0 +1,349 @@
+# Ejercicio 9 
+
+ Genera aleatoriamente una variable regresora 
+$X$ y un vector aleatorio $\epsilon$ de longitud 
+$n = 100$, con distribución normal estándar e independientes.
+
+Genera la variable respuesta de acuerdo con el modelo:
+$$
+Y = X + X^2 + X^3 + \epsilon. 
+$$
+```{r}
+library(purrr)
+library(ggplot2)
+library(ramify)
+```
+
+```{r}
+n <- 100 
+X_distribution <- rnorm 
+error_distribution <- rnorm
+modelo_1 <- function (x) {
+  return (x + x^2 + x^3)
+}
+
+Y_distribution <- function (n, t){
+  x <- X_distribution(n)
+  e <- error_distribution(n)
+  return (sapply(x, t) + e)
+}
+
+
+Y_1 <- Y_distribution(n, modelo_1)
+```
+
+```{r}
+X <- X_distribution(n)
+# Generamos las potencias
+datos <- data.frame('1'=X)
+for (i in 2:10) {
+  datos[i] <- datos[1]*datos[i-1]
+}
+# Modelo1 
+Y <- unlist(as.list(datos[1]+datos[2] + datos[3] + error_distribution(n)))
+datos$'y' <- Y
+datos
+datos2 <- datos
+#plot(X, Y, type='p')
+
+datos2$'Y_ideal' <- sapply(X, function(x)(x*(1 + x*(1 + x))))
+
+p <- ggplot(datos2) + 
+  geom_point( aes(X1, Y), colour = 'black' ) +
+  geom_line(aes(X1, Y_ideal), colour = 'red' ) 
+  
+
+p
+```
+
+##  Selecciona el modelo óptimo   
+entre todos los submodelos que contienen como variabels regresoras $X, X^2, X^3, \ldots, X^{10}$. 
+¿Cuál es el mejor modelo de acuerdo con los criterios $C_p$, BIC y $R_a^2$?
+
+**Solución** 
+Para poder realizar estas comparaciones utilizaremos la función [`leaps::regsubsets`](https://www.rdocumentation.org/packages/leaps/versions/3.1/topics/regsubsets). 
+
+Donde los argumentos que nos interesan son: 
+- `datos`
+- `method` donde indicaremos de si se trata de `exhaustive` o `forward`.
+
+Finalmente consultaremos los valores respectivos consultando los atributos de la salida:  
+
+- `adjr2` para Adjusted r-squared. 
+- `cp` para Mallows's CP. 
+- `bic` para Schwartz's information criterion BIC. 
+
+```{R}
+
+modelo_exhaustivo <- leaps::regsubsets(
+  y ~ ., 
+  data=datos
+  )
+resumen_1 <- summary(modelo_exhaustivo)
+resumen_1
+```
+
+```{r}
+library("ggplot2")
+
+pinta_ajuste <- function(y_criterio, label){
+  plot_data <- data.frame(
+    x = 1:8,
+    y = y_criterio
+  )
+  print(plot_data)
+  y_label <- label
+  
+  ggp <- ggplot(plot_data, aes(x, y)) +    # ggplot2 plot with default grid
+    geom_line()
+  ggp + 
+    xlab("Número de variables") +
+    ylab(y_label) #+
+    #scale_y_continuous(minor_breaks = seq(0, 10, 0.005))
+}
+
+```
+
+### Mejor modelo de acorde a R cuadrado ajustado 
+
+```{r}
+pinta_ajuste(resumen_1$adjr2, "R2 ajustado")
+cat("Se alcanza el máximo con ", which.max(resumen_1$adjr2), "parametros")
+```
+Será mejor donde alcance un máximo, esto es en $p = 8$ es decir utilizando 8 parámetros. 
+Vamos a proceder a analizar los coeficientes. 
+
+```{r}
+# Mejores elementos
+#  X1  X1.1 X1.2 X1.3 X1.4 X1.5 X1.6 X1.7 X1.8 X1.9
+#7  ( 1 ) " " "*"  "*"  " "  "*"  " "  "*"  "*"  "*"  "*" 
+
+modelo_r2_a <- lm(y ~ X1.1 + X1.2+ X1.3  + X1.5 + X1.6 + X1.7 + X1.8+ X1.9 -1, data=datos)
+summary(modelo_r2_a)
+
+y_predit_r2_a <- predict(object=modelo_r2_a, newdata=datos)
+
+datos2$'Y_r2a' <- y_predit_r2_a 
+
+p <- ggplot(datos2) + 
+  geom_point( aes(X1, Y), colour = 'black' ) +
+  geom_line(aes(X1, Y_ideal), colour = 'red' ) +
+  geom_line(aes(X1, Y_r2a), colour = 'green' )
+  
+
+p
+
+```
+
+Como vemos más variables lo que hacen es acercarse al ruido. 
+
+### Cp
+```{r}
+pinta_ajuste(resumen_1$cp, "Cp")
+cat("Con el criterio CP, el mejor modelo tiene ", which.min(resumen_1$cp), "parametros\n")
+summary(modelo_exhaustivo)
+```
+
+Vemos que con este criterio alcanza un mínimo en cinco variables. 
+es decir que el mejor de los resultados sería 
+
+```
+Selection Algorithm: exhaustive
+         X1  X1.1 X1.2 X1.3 X1.4 X1.5 X1.6 X1.7 X1.8 X1.9
+6  ( 1 ) " " " "  "*"  "*"  "*"  "*"  " "  "*"  " "  "*" 
+```
+que si entrenamos obtendríamos
+
+```{r}
+modelo_cp<- lm(y ~ X1.2 + X1.3 + X1.4 + X1.5 + X1.7  + X1.9 -1, data=datos)
+summary(modelo_cp)
+X
+y_predit_cp <- predict(object=modelo_cp, newdata=datos)
+
+datos2$'Y_cp' <- y_predit_cp 
+
+p <- ggplot(datos2) + 
+  geom_point( aes(X1, Y), colour = 'black' ) +
+  geom_line(aes(X1, Y_ideal), colour = 'red' ) +
+  geom_line(aes(X1, Y_cp), colour = 'green' )
+  
+p
+```
+### BIC 
+
+
+
+```{r}
+pinta_ajuste(resumen_1$bic, "Bic")
+
+cat("Con el criterio BIC, el mejor modelo tiene ", which.min(resumen_1$bic), "parametros\n")
+summary(modelo_exhaustivo)
+```
+```{r}
+modelo_bic<- lm(y ~ X1 + X1.2 + X1.3 -1, data=datos)
+summary(modelo_bic)
+
+y_predit_bic <- predict(object=modelo_bic, newdata=datos)
+
+datos2$'Y_bic' <- y_predit_bic 
+
+p <- ggplot(datos2) + 
+  geom_point( aes(X1, Y), colour = 'black' ) +
+  geom_line(aes(X1, Y_ideal), colour = 'red' ) +
+  geom_line(aes(X1, Y_bic), colour = 'green' )
+  
+p
+```
+## Usando ahora el método iterativo  
+
+```{R}
+
+modelo_iterativo_delante <- leaps::regsubsets(
+  y ~ ., 
+  data=datos, 
+  method = "forward"
+  )
+resumen_2 <- summary(modelo_iterativo_delante)
+resumen_2
+```
+Observaciones: 
+
+Como vemos ahora las variables seleccionadas para $p$ parámetros están incluídas 
+en el modelo con $p+1$ parámetros. Esto es lo esperado ya que es el comportamiento de forward 
+con el fin de mejorar el rendimiendo. 
+
+
+```{r}
+library("ggplot2")
+
+pinta_ajuste <- function(y_criterio, label){
+  plot_data <- data.frame(
+    x = 1:8,
+    y = y_criterio
+  )
+  print(plot_data)
+  y_label <- label
+  
+  ggp <- ggplot(plot_data, aes(x, y)) +    # ggplot2 plot with default grid
+    geom_line()
+  ggp + 
+    xlab("Número de variables") +
+    ylab(y_label) #+
+    #scale_y_continuous(minor_breaks = seq(0, 10, 0.005))
+}
+
+```
+
+### Mejor modelo de acorde a R cuadrado ajustado  con modelo iterativo hacia delante
+
+```{r}
+pinta_ajuste(resumen_2$adjr2, "R2 ajustado")
+cat("Se alcanza el máximo con ", which.max(resumen_2$adjr2), "parametros")
+```
+Será mejor donde alcance un máximo, esto es en $p = 8$ es decir utilizando 8 parámetros. 
+Vamos a proceder a analizar los coeficientes. 
+
+```{r}
+#         X1  X1.1 X1.2 X1.3 X1.4 X1.5 X1.6 X1.7 X1.8 X1.9
+#8  ( 1 ) "*" "*"  "*"  "*"  "*"  "*"  " "  "*"  " "  "*" 
+
+
+modelo_r2_a <- lm(y ~ X1 + X1.1 + X1.2 + X1.3 + X1.4+ X1.5 + X1.7 + X1.9 -1, data=datos)
+summary(modelo_r2_a)
+
+y_predit_r2_a <- predict(object=modelo_r2_a, newdata=datos)
+
+datos2$'Y_r2a' <- y_predit_r2_a 
+
+p <- ggplot(datos2) + 
+  geom_point( aes(X1, Y), colour = 'black' ) +
+  geom_line(aes(X1, Y_ideal), colour = 'red' ) +
+  geom_line(aes(X1, Y_r2a), colour = 'green' )
+  
+
+p
+
+```
+
+Como vemos más variables lo que hacen es acercarse al ruido. 
+
+### Cp
+```{r}
+pinta_ajuste(resumen_2$cp, "Cp")
+cat("Con el criterio CP, el mejor modelo tiene ", which.min(resumen_2$cp), "parametros\n")
+summary(modelo_iterativo_delante)
+```
+
+Vemos que con este criterio alcanza un mínimo en cinco variables. 
+es decir que el mejor de los resultados sería 
+
+```
+Selection Algorithm: exhaustive
+         X1  X1.1 X1.2 X1.3 X1.4 X1.5 X1.6 X1.7 X1.8 X1.9
+6  ( 1 ) " " " "  "*"  "*"  "*"  "*"  " "  "*"  " "  "*" 
+```
+que si entrenamos obtendríamos
+
+```{r}
+modelo_cp<- lm(y ~ X1.2 + X1.3 + X1.4 + X1.5 + X1.7  + X1.9 -1, data=datos)
+summary(modelo_cp)
+X
+y_predit_cp <- predict(object=modelo_cp, newdata=datos)
+
+datos2$'Y_cp' <- y_predit_cp 
+
+p <- ggplot(datos2) + 
+  geom_point( aes(X1, Y), colour = 'black' ) +
+  geom_line(aes(X1, Y_ideal), colour = 'red' ) +
+  geom_line(aes(X1, Y_cp), colour = 'green' )
+  
+p
+```
+### BIC 
+
+
+
+```{r}
+pinta_ajuste(resumen_2$bic, "Bic")
+
+cat("Con el criterio BIC, el mejor modelo tiene ", which.min(resumen_1$bic), "parametros\n")
+summary(modelo_iterativo_delante)
+```
+```{r}
+modelo_bic<- lm(y ~ X1 + X1.1 +  X1.2  -1, data=datos)
+summary(modelo_bic)
+
+y_predit_bic <- predict(object=modelo_bic, newdata=datos)
+
+datos2$'Y_bic' <- y_predit_bic 
+
+p <- ggplot(datos2) + 
+  geom_point( aes(X1, Y), colour = 'black' ) +
+  geom_line(aes(X1, Y_ideal), colour = 'red' ) +
+  geom_line(aes(X1, Y_bic), colour = 'green' )
+  
+p
+print('Los coefficientes del modelo son')
+coef(modelo_bic)
+```
+## Lasso 
+```{r}
+library(glmnet)
+x <- datos[c(1:10)]
+x
+y <- datos$y
+modelo_lasso <- glmnet(x, y, alpha = 1, intercept=FALSE)   # alpha = 1 (lasso); alpha = 0 (ridge)
+plot(modelo_lasso, xvar='lambda', label=TRUE)
+coef(modelo_lasso, s = 0.1)
+#help(coef)
+```
+
+La ventaja que tiene lasso es que permite eliminar ciertos coeficientes esto queda de manifiesto en que la mayoría son nulos. 
+
+
+## Genera ahora las respuestas a partir del modelo 
+
+$$
+Y = X^7 + \epsilon.
+$$
+
