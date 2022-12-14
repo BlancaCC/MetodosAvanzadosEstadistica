@@ -193,6 +193,55 @@ Por lo tanto apriori no podríamos explicar una varia con la otra con un modelo 
 
 
 ## Calcula intervalos de confianza al nivel $90\%$ para todos los $\beta_i$ del modelo.
-(Indicación: usa el comando confint)
+
+Usaremos la función [`confint`](https://fhernanb.github.io/libro_regresion/ic.html)
+
+```{r}
+
+confint(reg, level=0.90)
+```
+esto no da un rango de incertidumbre en el que puede oscilar cada uno de los respectivos parámetros con 
+un $90 \%$ de probabilidad. 
+
+$$
+\begin{align}
+&\beta_{0} \in [60.537, 71.365], \\
+&\beta_{\text{ nat}} \in [-0.225 -0.067], \\
+&\beta_{\text{mortinf}} \in [-0.158, -0.108], \\
+&\beta_{\text{ log_pnb }}  \in [0.396 , 1.493]. \\
+\end{align}
+$$
+Ya 
+$$
+P( \beta_{inf} \leq \beta \leq \beta_{sup}) = 1 - \alpha.
+$$
+Donde $\beta_{inf}$ y $\beta_{sup}$ son los elementos inferiores y superiores del intervalo. 
+
+Cuando mayor sea el intervalo más incertidumbre tendremos de la corrección del parámetro. 
+
 
 ## Predice el valor de la esperanza de vida de los hombres en un país para el que el índice de natalidad es 29, la mortalidad infantil vale 50 y el logaritmo de su pnb vale 7. Calcula un intervalo de confianza del 95 % para el valor esperado de dicha variable.
+
+Para ello usaremos la función [`predict`](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/predict.lm)
+
+```{r}
+# Debemos de escribir el data frame con el nombre exacto 
+#bde las columnas con las que se creo el modelo de regresión.
+# Estas son:
+# nat     mortinf     log_pnb 
+new_data <- data.frame(
+  nat = 29,
+  mortinf = 50,
+  log_pnb = 7
+)
+# Realizamos la predicción 
+predict(reg, new_data, interval = "confidence", level = 0.95 )
+```
+Por lo tanto la esperanza de visa de los hombres de ese pais es de 61.6683 años. 
+El intervalo de confianza es de $[60.88761, 62.449]$ es decir valores sobre los que podría oscilar el valor
+con un $95 \%$ de confianza. 
+
+Además cabe mencionar que la predicción del intervalo se basa en que el error residual están distribuidos 
+bajo una distribución normal y varianza constante. Luego solo deberíamos de usar estos intervalos 
+si tuvieramos razones para pensar que se da esta condición. 
+
