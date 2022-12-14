@@ -42,7 +42,7 @@ for (i in 2:10) {
 # Modelo1 
 Y <- unlist(as.list(datos[1]+datos[2] + datos[3] + error_distribution(n)))
 datos$'y' <- Y
-datos
+#datos
 datos2 <- datos
 #plot(X, Y, type='p')
 
@@ -66,29 +66,30 @@ Para poder realizar estas comparaciones utilizaremos la función [`leaps::regsub
 Donde los argumentos que nos interesan son: 
 - `datos`
 - `method` donde indicaremos de si se trata de `exhaustive` o `forward`.
+- `nvmax` número máximo de subconjuntos a examinar, la pondremos al máximo de parámetros que tenemos.
+maximum size of subsets to examine
 
-Finalmente consultaremos los valores respectivos consultando los atributos de la salida:  
 
 - `adjr2` para Adjusted r-squared. 
 - `cp` para Mallows's CP. 
 - `bic` para Schwartz's information criterion BIC. 
 
 ```{R}
-
+subconjuntos_a_examinar <- 10
 modelo_exhaustivo <- leaps::regsubsets(
   y ~ ., 
-  data=datos
+  data=datos,
+  nvmax= subconjuntos_a_examinar # para que utilice todos las componentes posibles
   )
+
 resumen_1 <- summary(modelo_exhaustivo)
 resumen_1
 ```
 
 ```{r}
-library("ggplot2")
-
 pinta_ajuste <- function(y_criterio, label){
   plot_data <- data.frame(
-    x = 1:8,
+    x = 1:subconjuntos_a_examinar,
     y = y_criterio
   )
   print(plot_data)
@@ -157,7 +158,7 @@ que si entrenamos obtendríamos
 ```{r}
 modelo_cp<- lm(y ~ X1.2 + X1.3 + X1.4 + X1.5 + X1.7  + X1.9 -1, data=datos)
 summary(modelo_cp)
-X
+
 y_predit_cp <- predict(object=modelo_cp, newdata=datos)
 
 datos2$'Y_cp' <- y_predit_cp 
@@ -201,7 +202,8 @@ p
 modelo_iterativo_delante <- leaps::regsubsets(
   y ~ ., 
   data=datos, 
-  method = "forward"
+  method = "forward",
+  nvmax = subconjuntos_a_examinar
   )
 resumen_2 <- summary(modelo_iterativo_delante)
 resumen_2
@@ -213,9 +215,7 @@ en el modelo con $p+1$ parámetros. Esto es lo esperado ya que es el comportamie
 con el fin de mejorar el rendimiento. 
 
 
-```{r}
-library("ggplot2")
-
+```
 pinta_ajuste <- function(y_criterio, label){
   plot_data <- data.frame(
     x = 1:8,
@@ -287,7 +287,7 @@ que si entrenamos obtendríamos
 ```{r}
 modelo_cp<- lm(y ~ X1.2 + X1.3 + X1.4 + X1.5 + X1.7  + X1.9 -1, data=datos)
 summary(modelo_cp)
-X
+
 y_predit_cp <- predict(object=modelo_cp, newdata=datos)
 
 datos2$'Y_cp' <- y_predit_cp 
@@ -330,7 +330,6 @@ coef(modelo_bic)
 ```{r}
 library(glmnet)
 x <- datos[c(1:10)]
-x
 y <- datos$y
 modelo_lasso <- glmnet(x, y, alpha = 1, intercept=FALSE)   # alpha = 1 (lasso); alpha = 0 (ridge)
 plot(modelo_lasso, xvar='lambda', label=TRUE)
@@ -370,11 +369,15 @@ datos$'y' <- Y
 modelo_exhaustivo <- leaps::regsubsets(
   y ~ ., 
   data=datos,
-  nvmax = 10
+  nvmax = subconjuntos_a_examinar
   )
 resumen_1 <- summary(modelo_exhaustivo)
 resumen_1
 ```
+
+Vemos que ahora  a pesar de estar en un método exhaustivo, $X^7$ (el que sabemos que forma parte del modelo ideal)
+se encuentra en todos. 
+Esto puede entenderse como que al ser solo una *es más simple que la encuentre* y que no se compense con nada. 
 
 ### Submodelos óptimos
 ```{r}
@@ -401,7 +404,7 @@ modelo_iterativo_delante <- leaps::regsubsets(
   y ~ ., 
   data=datos, 
   method = "forward",
-  nvmax = 10
+  nvmax = subconjuntos_a_examinar
   )
 resumen_2 <- summary(modelo_iterativo_delante)
 resumen_2
@@ -424,10 +427,11 @@ summary(modelo_iterativo_delante)
 ## Lasso 
 ```{r}
 x <- datos[c(1:10)]
-x
+
 y <- datos$y
 modelo_lasso <- glmnet(x, y, alpha = 1, intercept=FALSE)   # alpha = 1 (lasso); alpha = 0 (ridge)
 plot(modelo_lasso, xvar='lambda', label=TRUE)
 coef(modelo_lasso, s = 0.1)
 #help(coef)
 ```
+
