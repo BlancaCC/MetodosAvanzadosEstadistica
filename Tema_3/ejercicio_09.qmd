@@ -57,7 +57,7 @@ p
 ```
 
 ##  Selecciona el modelo óptimo   
-entre todos los submodelos que contienen como variabels regresoras $X, X^2, X^3, \ldots, X^{10}$. 
+entre todos los submodelos que contienen como variables regresoras $X, X^2, X^3, \ldots, X^{10}$. 
 ¿Cuál es el mejor modelo de acuerdo con los criterios $C_p$, BIC y $R_a^2$?
 
 **Solución** 
@@ -208,9 +208,9 @@ resumen_2
 ```
 Observaciones: 
 
-Como vemos ahora las variables seleccionadas para $p$ parámetros están incluídas 
+Como vemos ahora las variables seleccionadas para $p$ parámetros están incluidas 
 en el modelo con $p+1$ parámetros. Esto es lo esperado ya que es el comportamiento de forward 
-con el fin de mejorar el rendimiendo. 
+con el fin de mejorar el rendimiento. 
 
 
 ```{r}
@@ -347,3 +347,87 @@ $$
 Y = X^7 + \epsilon.
 $$
 
+### Generación de los datos 
+```{r}
+# Generamos las potencias
+datos <- data.frame('1'=X)
+for (i in 2:10) {
+  datos[i] <- datos[1]*datos[i-1]
+}
+# Modelo1 
+Y <- unlist(
+  as.list(
+    datos[7] + error_distribution(n)
+  )
+)
+datos$'y' <- Y
+```
+
+
+### Modelo óptimo dentro de submodelos  
+ 
+```{R}
+modelo_exhaustivo <- leaps::regsubsets(
+  y ~ ., 
+  data=datos,
+  nvmax = 10
+  )
+resumen_1 <- summary(modelo_exhaustivo)
+resumen_1
+```
+
+### Submodelos óptimos
+```{r}
+print("Submodelos óptimos")
+
+pinta_ajuste(resumen_1$adjr2, "R2 ajustado")
+cat("Se alcanza el máximo con ", which.max(resumen_1$adjr2), "parametros")
+
+pinta_ajuste(resumen_1$cp, "Cp")
+cat("Con el criterio CP, el mejor modelo tiene ", which.min(resumen_1$cp), "parametros\n")
+
+pinta_ajuste(resumen_1$bic, "Bic")
+
+cat("Con el criterio BIC, el mejor modelo tiene ", which.min(resumen_1$bic), "parametros\n")
+
+summary(modelo_exhaustivo)
+```
+
+### Submodelos utilizando un método iterativo 
+
+```{R}
+
+modelo_iterativo_delante <- leaps::regsubsets(
+  y ~ ., 
+  data=datos, 
+  method = "forward",
+  nvmax = 10
+  )
+resumen_2 <- summary(modelo_iterativo_delante)
+resumen_2
+```
+
+```{R}
+print("Submodelos utilizando el método iterativo \n")
+pinta_ajuste(resumen_2$adjr2, "R2 ajustado")
+cat("Se alcanza el máximo con ", which.max(resumen_2$adjr2), "parametros")
+
+pinta_ajuste(resumen_2$cp, "Cp")
+cat("Con el criterio CP, el mejor modelo tiene ", which.min(resumen_2$cp), "parametros\n")
+
+pinta_ajuste(resumen_2$bic, "Bic")
+
+cat("Con el criterio BIC, el mejor modelo tiene ", which.min(resumen_1$bic), "parametros\n")
+summary(modelo_iterativo_delante)
+```
+
+## Lasso 
+```{r}
+x <- datos[c(1:10)]
+x
+y <- datos$y
+modelo_lasso <- glmnet(x, y, alpha = 1, intercept=FALSE)   # alpha = 1 (lasso); alpha = 0 (ridge)
+plot(modelo_lasso, xvar='lambda', label=TRUE)
+coef(modelo_lasso, s = 0.1)
+#help(coef)
+```
