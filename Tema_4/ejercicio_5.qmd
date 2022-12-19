@@ -1,0 +1,98 @@
+# Ejercicio 5  
+
+El siguiente código carga en R los datos del fichero
+`lirios`:
+
+```{r}
+ load(url('https://matematicas.uam.es/~joser.berrendero/datos/lirios.RData'))
+lirios
+# Cargamos los datos en un dataframe
+data <- as.data.frame(lirios)
+data$clases <- clases
+colnames(data)
+head(data)
+
+```
+
+Los datos corresponden a la longitud y anchura del pétalo y del sépalo de 100 lirios, 50 de ellos pertenecen a la especie versicolor y otros 50 a la especie virginica.
+
+## Apartado 1
+
+Considera primero únicamente las dos variables correspondientes al sépalo. 
+
+
+### Cálculo de los coeficientes de la función discriminante lineal de Fisher
+
+```{r}
+library(MASS)
+fisher_lineal <-lda(clases ~ Sepal.Length + Sepal.Width , prior = c(0.5, 0.5), data = data)
+fisher_lineal
+```
+Podemos observar que los coeficientes obtenidos han sido 
+```
+Coefficients of linear discriminants:
+                   LD1
+Sepal.Length 1.6271842
+Sepal.Width  0.3435524
+```
+Esto nos da una indicación de la relevancia de la etiqueta en cuanto a clasificar, a mayor en valor absoluto mayor importancia.  
+
+
+### Estimación la probabilidad de error de esta regla mediante el riesgo empírico 
+
+La función de riesgo empírico se define como 
+
+$$
+\hat{L}_n 
+= 
+\frac{1}{n}
+\sum_{i=1}^n
+I_{g(x_i) \neq y_i}
+$$ 
+
+Procedamos a calcularla
+
+```{r}
+predictions <- predict(fisher_lineal)$class
+table(data$clases, predictions)
+riesgo_empirico <-mean(data$clases !=  predictions)
+cat('El riesgo empírico es de ', riesgo_empirico)
+```
+Además de que esa
+
+### Tasa de error por validación cruzada 
+
+```{r}
+predicciones.lda.cv <- lda(clases ~ Sepal.Length + Sepal.Width , prior = c(0.5, 0.5), data = data, CV=TRUE)$class
+tasa_error_cv <- mean(data$clases != predicciones.lda.cv)
+cat("La tasa de error en validación cruzada es de ", tasa_error_cv)
+```
+
+Notemos que la tasa de error de validación cruzada es mayor, esto es natural ya que no estamos entrenando con todos los datos.
+
+### caso extra  
+
+```{r}
+linear_fisher
+```
+
+Group means:
+  Sepal.Length Sepal.Width
+0        5.936       2.770
+1        6.588       2.974
+
+```{r}
+library(matlib)
+Sigma <- cov(data[,c("Sepal.Length", "Sepal.Width")])
+s <-matrix(Sigma, nrow = 2)
+s_inv <- inv(s)
+mu_0 <- c( 5.936, 2.770)
+mu_1 <- c( 6.588,  2.974)
+diference <- mu_0 - mu_1
+
+delta_2 <- diference %*%  s_inv %*% matrix(diference)
+delta_2 <- delta_2[1,1]
+
+
+error <- 1 - 
+```
