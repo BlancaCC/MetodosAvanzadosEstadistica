@@ -1,3 +1,13 @@
+---
+title: "Entrega de ejercicios Tema 4"
+author: "Blanca Cano Camarero"
+date: \today
+format: pdf
+toc: true
+toc-depth: 3
+lang: es
+---  
+
 # Ejercicio 5  
 
 El siguiente código carga en R los datos del fichero
@@ -5,7 +15,7 @@ El siguiente código carga en R los datos del fichero
 
 ```{r}
  load(url('https://matematicas.uam.es/~joser.berrendero/datos/lirios.RData'))
-lirios
+
 # Cargamos los datos en un dataframe
 data <- as.data.frame(lirios)
 data$clases <- clases
@@ -25,7 +35,8 @@ Considera primero únicamente las dos variables correspondientes al sépalo.
 
 ```{r}
 library(MASS)
-fisher_lineal <-lda(clases ~ Sepal.Length + Sepal.Width , prior = c(0.5, 0.5), data = data)
+fisher_lineal <-lda(clases ~ Sepal.Length + Sepal.Width,
+                    prior = c(0.5, 0.5), data = data)
 fisher_lineal
 ```
 Podemos observar que los coeficientes obtenidos han sido 
@@ -63,18 +74,28 @@ Además de que esa
 ### Tasa de error por validación cruzada 
 
 ```{r}
-predicciones.lda.cv <- lda(clases ~ Sepal.Length + Sepal.Width , prior = c(0.5, 0.5), data = data, CV=TRUE)$class
+predicciones.lda.cv <- lda(clases ~ Sepal.Length + Sepal.Width,
+                           prior = c(0.5, 0.5), 
+                           data = data, CV=TRUE
+                           )$class
 tasa_error_cv <- mean(data$clases != predicciones.lda.cv)
 cat("La tasa de error en validación cruzada es de ", tasa_error_cv)
 ```
 
 Notemos que la tasa de error de validación cruzada es mayor, esto es natural ya que no estamos entrenando con todos los datos.
 
-### caso extra  
+### Compara los valores de estos estimadores con el estimador paramétrico basado en el resultado del ejercicio 4
 
-```{r}
-linear_fisher
-```
+$$
+1 - \phi(\hat\Delta /2)
+$$
+donde 
+$$
+{\hat\Delta}^2 = (\hat \mu_0 - \hat \mu_1)' \hat \Sigma^{-1} (\hat \mu_0 - \hat \mu_1).
+$$
+**Solución**
+
+Los vectores de medias vendrán dados por: 
 
 Group means:
   Sepal.Length Sepal.Width
@@ -82,17 +103,111 @@ Group means:
 1        6.588       2.974
 
 ```{r}
-library(matlib)
-Sigma <- cov(data[,c("Sepal.Length", "Sepal.Width")])
-s <-matrix(Sigma, nrow = 2)
-s_inv <- inv(s)
 mu_0 <- c( 5.936, 2.770)
 mu_1 <- c( 6.588,  2.974)
 diference <- mu_0 - mu_1
+```
+Estimaremos la matriz de covarianzas suponiendo caso homocedástico: 
 
-delta_2 <- diference %*%  s_inv %*% matrix(diference)
-delta_2 <- delta_2[1,1]
+$$
+S
+= 
+\frac{n_0 -1}{n_0 + n_1 -2} S_0
++
+\frac{n_1 -1}{n_0 + n_1 -2} S_1.
+$$
+
+```{r}
+library(matlib)
+
+data_0 <- data[data$clases == 0,c("Sepal.Length", "Sepal.Width")]
+n_0 <- nrow(data_0)
+S_0 <- cov(data_0)
+
+data_1 <- data[data$clases == 1,c("Sepal.Length", "Sepal.Width")]
+n_1 <- nrow(data_1)
+S_1 <- cov(data_1)
+
+S <- (
+  (n_0 - 1)*S_0
+  +
+  (n_1 - 1)*S_1
+)/(n_0 + n_1 - 2)
 
 
-error <- 1 - 
+S_inv <- inv(S)
+delta_2 <- diference %*%  S_inv %*% matrix(diference)
+delta <- sqrt(delta_2[1,1])
+
+error <- 1 - dnorm(delta/2)
+
+cat("EL error Bayes es ",error)
+
+```
+
+## Repetición del apartado anterior pero considerando las cuatro variables  
+
+### Coeficiente de la función discriminante lineal de Fisher  
+
+```{r}
+fisher_lineal <-lda(clases ~ Sepal.Length + Sepal.Width +  Petal.Length
++ Petal.Width
+            ,
+  prior = c(0.5, 0.5), data = data)
+fisher_lineal
+```
+
+### Estimación la probabilidad de error de esta regla mediante el riesgo empírico 
+
+```{r}
+predictions <- predict(fisher_lineal)$class
+table(data$clases, predictions)
+riesgo_empirico <-mean(data$clases !=  predictions)
+cat('El riesgo empírico es de ', riesgo_empirico)
+```
+
+
+### Tasa de error por validación cruzada 
+
+```{r}
+predicciones.lda.cv <- lda(clases ~ Sepal.Length + Sepal.Width +  Petal.Length
++ Petal.Width
+, prior = c(0.5, 0.5), data = data, CV=TRUE)$class
+tasa_error_cv <- mean(data$clases != predicciones.lda.cv)
+cat("La tasa de error en validación cruzada es de ", tasa_error_cv)
+```
+
+### Estimador paramétrico  
+
+```{r}
+fisher_lineal
+```
+```{r}
+mu_0 <- c( 5.936, 2.770, 4.260, 1.326)
+mu_1 <- c(6.588, 2.974, 5.552, 2.026)
+diference <- mu_0 - mu_1
+
+columns <- c("Sepal.Length", "Sepal.Width", "Petal.Length","Petal.Width")
+data_0 <- data[data$clases == 0, columns]
+n_0 <- nrow(data_0)
+S_0 <- cov(data_0)
+
+data_1 <- data[data$clases == 1,columns]
+n_1 <- nrow(data_1)
+S_1 <- cov(data_1)
+
+S <- (
+  (n_0 - 1)*S_0
+  +
+  (n_1 - 1)*S_1
+)/(n_0 + n_1 - 2)
+
+
+S_inv <- inv(S)
+delta_2 <- diference %*%  S_inv %*% matrix(diference)
+delta <- sqrt(delta_2[1,1])
+
+error <- 1 - dnorm(delta/2)
+
+cat("EL error Bayes es ",error)
 ```
