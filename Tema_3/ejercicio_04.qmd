@@ -1,0 +1,109 @@
+# Ejercicio 4  
+
+Sean $Y_1, Y_2, Y_3$  tres variables aleatorias independientes con distribución normal y varianza 
+$\simga^2$. Supongamos que $\mu$ es la media de 
+$Y_1$, 
+$\lambda$ es la media de $Y_2$,
+$\lambda + \mu$ es la media de $Y_3$, 
+donde  $\lambda, \mu \in \mathbb{R}$.
+
+## Apartado primero  
+
+Demuestra que el vector $Y = (Y_1, Y_2, Y_3)'$
+ verifica el modelo de regresión múltiple 
+ $$
+ Y = X \beta + \epsilon.
+ $$
+
+ Para ello, determina la matriz de diseño $X$,
+el vector de parámetros $\beta$
+ y la distribución de las variables de error $\epsilon$.
+
+**Solución**  
+
+$$
+X = 
+\begin{bmatrix}
+1 & 0 \\
+0 & 1 \\
+1 & 1 
+\end{bmatrix}
+$$
+
+$\beta = (\mu, \lambda)'$
+
+$\epsilon \sim \mathcal{N}((0, 0, 0)', \sigma^2 Id_3)$. 
+
+## Apartado 2
+
+Calcula los estimadores de máxima verosimilitud (equivalentemente, de mínimos cuadrados) de $\lambda$ y $\mu$. 
+
+**Solución** 
+
+Esto no sé justificarlo matemáticamente, pero teniendo en cuenta que
+el estimador máximo verosímil de la media de la normal es la media
+y que para estimador tenemos dos datos: 
+
+$$
+\lambda = \frac{Y_2 + (Y_3 - Y_1)}{2},
+$$
+
+$$
+\mu = \frac{Y_1 + (Y_3 - Y_2)}{2}.
+$$
+
+## Apartado 3 
+
+Calcula la distribución del vector  $(\hat \lambda, \hat \mu)'$,
+formado por los estimadores calculados en el apartado anterior.
+
+**Solución**
+
+La distribución de los estimadores viene dado por 
+
+$$
+\hat \beta \sim \mathcal{N}(\beta, \sigma^2 (X'X)^{-1})
+$$
+
+Por lo que 
+
+$$
+X' = 
+begin{bmatrix}
+1 & 0 & 1 \\
+0 & 1 & 1 \\
+\end{bmatrix} 
+$$
+
+$$
+X'X = 
+begin{matrix}
+2 & 1 \\
+1 & 2 \\
+\end{matrix}
+$$
+
+Calculando la inversa por adjuntos resulta que 
+
+$$
+(X'X)^{-1} =
+\frac{1}{3} 
+begin{bmatrix}
+2 & -1 \\
+-1 & 2
+\end{bmatrix}
+$$
+
+Por lo que
+
+$$
+\hat \beta \sim \mathcal{N}
+\left(
+    \beta,
+     \sigma^2 \frac{1}{3} 
+        begin{bmatrix}
+        2 & -1 \\
+        -1 & 2
+        \end{bmatrix}
+\right)
+$$

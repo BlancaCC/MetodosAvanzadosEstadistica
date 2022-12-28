@@ -61,7 +61,7 @@ Puede verse como el sigma aumenta la dispersión respecto al eje Y.
 Para cada conjunto de datos se pretende ajustar una regresión de mínimos cuadrados penalizada prefijando 
 uno de los grados de libertad efectivos. 
 
-## Representación gráfica del error de predicción de validación cruzada generalizando en dunción de los grados de liberta utilizados. 
+## Representación gráfica del error de predicción de validación cruzada generalizando en función de los grados de liberta utilizados. 
 
 Imprimimos primero algunos ajustes: 
 ```{r}
@@ -89,7 +89,7 @@ for( df in c(2,7,10, 25) ){
 }
 
 ```
-Bajo una inspección visual puede verse que a  mayor número de grados de libertad mejor es el ajuste a los datos utilizados en regresión c, procedamos a costatarlo 
+Bajo una inspección visual puede verse que a  mayor número de grados de libertad mejor es el ajuste a los datos utilizados en regresión c, procedamos a constatarlo 
 
 ```{r}
 cv_error <- function (X, grados_libertad){
@@ -154,7 +154,7 @@ posee un ruido mayor (concretamente el de $\mathcal{N}(0,1)$)
 Relacionado con lo anterior, si el *ruido* es menor será más similar a su desarrollo de Taylor admitiendo por tanto desarrollar más términos de la serie de Taylor (grados de libertad en nuestro caso). 
 
 
-###  Cremiento mayor del error de $\sigma = 1$ frente a  $\sigma = 0.5$  
+###  Crecimiento mayor del error de $\sigma = 1$ frente a  $\sigma = 0.5$  
 
 Esto es claro resultado del segundo sumando de la relación mostrada: 
 

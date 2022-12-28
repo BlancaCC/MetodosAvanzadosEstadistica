@@ -1,6 +1,6 @@
 # Ejercicio 2  
 
-Comenzaremos llamnado a las bibliotecas que utilizaremos a lo largo de este ejercicio y cargando los datos relevantes.  
+Comenzaremos llamando a las bibliotecas que utilizaremos a lo largo de este ejercicio y cargando los datos relevantes.  
 ```{R}
 library(magrittr)
 library(dplyr)
@@ -46,48 +46,54 @@ SCE
 \right)^2.
 $$
 
-Este dato no aparece directamente en el *sumary* del la regresión lineal, luego habrá que calcularlo de manera manual. 
+Este dato no aparece directamente en el *summary* del la regresión lineal, luego habrá que calcularlo de manera manual. 
 
 ```{R}
-media_natalidad <- mean(natalidad$nat)
-
+media_vida <- mean(natalidad$esph)
 p <- predict(reg, natalidad)
-SCE <- Reduce('+',map(p, function(y_hat) (y_hat - media_natalidad)^2))
+SCE <- Reduce('+',map(p, function(y_hat) (y_hat - media_vida)^2))
 cat("La suma de cuadrados resultante es",SCE, '\n')
 ```
 
 
 ## ¿Cuánto vale la varianza muestral de la variable respuesta ?
 
-Esta se define como 
+Un estimador de la varianza muestrar vendrá dado como 
 $$
-VMR = \frac{1}{n-1}\sum_{i=1}^n
+\text{Varianza muestrar } 
+= 
+\frac{1}{n-1}\sum_{i=1}^n
 (Y_i - \bar Y)^2
+=
+\frac{SCT}{n-1}
 $$
-
-Que por definición de la suma de cuadrados total equivale a conocer la suma de cuadrados total (SCT)
-
-$$
-VMR = \frac{SCT}{n-1}
-$$
-
-Sabiendo que el coeficiente de determinación viene dado por 
-$$
-r^2 = \frac{SCE}{SCT}
-$$
-
-Este valor se puede calcular como gracias a la información provista por el resumen de la regresión lineal
+Usando la ortogonalidad de los residuos con las variables regresoras se tiene que 
 
 $$
-r^2 = (\text{Multiple R-squared})^2 = 0.9^2 = 0.81.
+SCT = SCE + SCR
 $$
 
-```{R}
-r_squared <- (summary(reg)$adj.r.squared)^2
-SCT <- SCE * r_squared
-VMR = SCT/(n-1)
-cat('VMR = ', VMR)
+Donde SCE proviene del apartado anterior y 
+
+$$
+SCR 
+= 
+\sum_{i = 0}^n e^2
+$$
+y
+$$
+e = Y - \hat Y.
+$$
+
+```{r}
+# Teniendo presente que ya hemos calculado las predicciones en la variable p
+e <- natalidad$esph - p
+SCR <- Reduce('+',map(e, function(x) x^2))
+SCT <- SCE + SCR
+VMR <- SCT / (n-1)
+cat('la varianza muestral de la variable respuesta vale ', VMR)
 ```
+
 
 ## Contraste de la complejidad del modelo
 
@@ -97,7 +103,7 @@ que es un vector fila con un uno en $1$ y el resto $0$.
 
 Debe de satisfacer que $A \beta = 0$.
 
-Definimos el modelo reducido $M0$ que resulta de imoner las restricciones de $H_0$.
+Definimos el modelo reducido $M0$ que resulta de imponer las restricciones de $H_0$.
 
 Bajo $H_0: A \beta = 0$ se verifica que 
 
@@ -135,7 +141,7 @@ Utilizaremos el comando [`anova`](https://www.rdocumentation.org/packages/stats/
 
 **Solución** 
 
-Al suponer que $\beta_1 = 0$ entonces ahora el modelo precindiría de natalidad, esto sería 
+Al suponer que $\beta_1 = 0$ entonces ahora el modelo predeciría de natalidad, esto sería 
 ```{r}
 reg0 <- lm(esph ~  mortinf + log_pnb, data = natalidad)
 ```
@@ -155,7 +161,7 @@ Como $ 0.00285  < 0.05$ rechazamos entonces la hipótesis nula.
 
 ## Contrasta a nivel $\alpha = 0.05$ la hipótesis nula $H_0 : \beta_1 =  \beta_2 = \beta_3 =0$  
 
-Contrasteremos que solo se pueda aproximar con la media
+Contrastaremos que solo se pueda aproximar con la media
 
 ```{r}
 reg0 <- lm(esph ~ 1, data = natalidad) # ahora sería solo con la media
@@ -169,7 +175,7 @@ Pr(>F)   < 2.2e-16
 $$
 
 
-es decir prácticamente $0$ luego se rechaza la hipótesis nula. 
+es decir prácticamente $0$, luego se rechaza la hipótesis nula. 
 
 Ya que si la media fuera un buen estimador se podría pensar que los modelos no tienen nada que ver con el modelo.
 
@@ -178,7 +184,7 @@ Ya que si la media fuera un buen estimador se podría pensar que los modelos no 
 Esto se hará con el comando [`vcoc`](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/vcov) que devuelve la matriz de covarianza de los parámetros ajustados. 
 
 $\hat{\beta}_1$ se corresponde a `nat` y $\hat{\beta}_2$
-se corresponde con `mortinf` luego mirando la respectiva fila y columan tenemos que 
+se corresponde con `mortinf` luego mirando la respectiva fila y columna tenemos que 
 
 ```{r}
 vcov(reg)
@@ -190,7 +196,7 @@ cov(\hat{\beta}_1, \hat{\beta}_2)
 -0.0004865478
 $$
 
-Puesto que el restultano es cercano a $0$ podemos pensar que el signo de una es independiente del de la otra, es decir independientes. 
+Puesto que el resultado es cercano a $0$ podemos pensar que el signo de una es independiente del de la otra, es decir independientes. 
 
 Por lo tanto apriori no podríamos explicar una varia con la otra con un modelo lineal.
 
@@ -203,7 +209,7 @@ Usaremos la función [`confint`](https://fhernanb.github.io/libro_regresion/ic.h
 
 confint(reg, level=0.90)
 ```
-esto no da un rango de incertidumbre en el que puede oscilar cada uno de los respectivos parámetros con 
+esto nos proporciona un rango de incertidumbre en el que puede oscilar cada uno de los respectivos parámetros con 
 un $90 \%$ de probabilidad. 
 
 
@@ -252,5 +258,5 @@ con un $95 \%$ de confianza.
 
 Además cabe mencionar que la predicción del intervalo se basa en que el error residual están distribuidos 
 bajo una distribución normal y varianza constante. Luego solo deberíamos de usar estos intervalos 
-si tuvieramos razones para pensar que se da esta condición. 
+si tuviéramos razones para pensar que se da esta condición. 
 
