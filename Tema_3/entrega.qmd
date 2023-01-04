@@ -1,0 +1,986 @@
+---
+title: "Entrega de ejercicios Tema 3"
+author: "Blanca Cano Camarero"
+date: \today
+format: pdf
+toc: true
+toc-depth: 3
+lang: es
+---  
+
+
+
+\newpage
+# Ejercicio 2  
+
+Comenzaremos llamando a las bibliotecas que utilizaremos a lo largo de este ejercicio y cargando los datos relevantes.  
+```{R}
+library(magrittr)
+library(dplyr)
+library(purrr)
+```
+
+
+```{R}
+
+natalidad <- read.table("https://verso.mat.uam.es/~joser.berrendero/datos/natalidad.txt", header = TRUE) %>% 
+  mutate(log_pnb = log(pnb))
+
+head(natalidad)
+```
+
+Se desea estudiar la esperanza de vida de los hombres como función lineal de la tasa de natalidad, la tasa de mortalidad infantil y el logaritmo del producto nacional bruto. Para ello se ajusta un modelo de regresión lineal múltiple, con los resultados siguientes:
+
+```{R}
+reg <- lm(esph ~ nat  + mortinf + log_pnb, data = natalidad)
+summary(reg)
+```
+
+## ¿De cuántos países consta la muestra utilizada?
+
+
+Cada fila se corresponde con un país distinto luego habrá:  
+
+```{R}
+n <- nrow(natalidad)
+n
+```
+
+## ¿Cuánto vale la suma de cuadrados que se utiliza para medir la variabilidad explicada por las tres variables regresoras?
+
+Se busca calcular la suma de cuadrados explicada que se calcula como 
+
+$$
+SCE 
+=
+\sum_{i=1}^n
+\left(
+\hat{Y}_i - \bar{Y}
+\right)^2.
+$$
+
+Este dato no aparece directamente en el *summary* del la regresión lineal, luego habrá que calcularlo de manera manual. 
+
+```{R}
+media_vida <- mean(natalidad$esph)
+p <- predict(reg, natalidad)
+SCE <- Reduce('+',map(p, function(y_hat) (y_hat - media_vida)^2))
+cat("La suma de cuadrados resultante es",SCE, '\n')
+```
+
+
+## ¿Cuánto vale la varianza muestral de la variable respuesta ?
+
+Un estimador de la varianza muestrar vendrá dado como 
+$$
+\text{Varianza muestrar } 
+= 
+\frac{1}{n-1}\sum_{i=1}^n
+(Y_i - \bar Y)^2
+=
+\frac{SCT}{n-1}
+$$
+Usando la ortogonalidad de los residuos con las variables regresoras se tiene que 
+
+$$
+SCT = SCE + SCR
+$$
+
+Donde SCE proviene del apartado anterior y 
+
+$$
+SCR 
+= 
+\sum_{i = 0}^n e^2
+$$
+y
+$$
+e = Y - \hat Y.
+$$
+
+```{r}
+# Teniendo presente que ya hemos calculado las predicciones en la variable p
+e <- natalidad$esph - p
+SCR <- Reduce('+',map(e, function(x) x^2))
+SCT <- SCE + SCR
+VMR <- SCT / (n-1)
+cat('la varianza muestral de la variable respuesta vale ', VMR)
+```
+
+
+## Contraste de la complejidad del modelo
+
+Se desea que contrastar que $H_0 : \beta_1 = 0$  
+esto viene determinado por el sistema matricial $A$
+que es un vector fila con un uno en $1$ y el resto $0$.
+
+Debe de satisfacer que $A \beta = 0$.
+
+Definimos el modelo reducido $M0$ que resulta de imponer las restricciones de $H_0$.
+
+Bajo $H_0: A \beta = 0$ se verifica que 
+
+$$
+\frac{
+(SCR_0 - SCR) / k
+}{
+SCR / (n - p -1)
+}
+\equiv
+F_{k,n-p-1},
+$$
+donde $k$ es el número de restricciones (rango de $A$ ciertamente), $p+1$ el número de $\beta$ (variables del modelo a ajustar) y $n$ el número de observaciones.
+
+La región crítica del contraste para nivel $\alpha$ es
+
+$$
+R
+= 
+\left\{
+\frac{
+(SCR_0 - SCR) / k
+}{
+SCR / (n - p -1)
+}
+>
+F_{k,n-p-1}
+\right\}
+$$
+
+Utilizaremos el comando [`anova`](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/anova) para R. 
+
+
+## Contrasta a nivel $\alpha = 0.05$ la hipótesis nula $H_0 : \beta_1 = 0$  
+
+**Solución** 
+
+Al suponer que $\beta_1 = 0$ entonces ahora el modelo predeciría de natalidad, esto sería 
+```{r}
+reg0 <- lm(esph ~  mortinf + log_pnb, data = natalidad)
+```
+
+```{r}
+anova(reg0, reg)
+```
+De aquí deducimos que la región crítica 
+$F = 9.411$ y lo que buscábamos, que la probabilidad de pertenecer a la región crítica siendo la $H_0$ cierta es de
+
+$$
+Pr(>F) = 0.00285 
+$$
+
+Como $ 0.00285  < 0.05$ rechazamos entonces la hipótesis nula. 
+
+
+## Contrasta a nivel $\alpha = 0.05$ la hipótesis nula $H_0 : \beta_1 =  \beta_2 = \beta_3 =0$  
+
+Contrastaremos que solo se pueda aproximar con la media
+
+```{r}
+reg0 <- lm(esph ~ 1, data = natalidad) # ahora sería solo con la media
+anova(reg0, reg)
+```
+
+Como podemos observar, ahora 
+
+$$
+Pr(>F)   < 2.2e-16 
+$$
+
+
+es decir prácticamente $0$, luego se rechaza la hipótesis nula. 
+
+Ya que si la media fuera un buen estimador se podría pensar que los modelos no tienen nada que ver con el modelo.
+
+## Estima la correlación entre $\hat{\beta}_1$ y $\hat{\beta}_2$. 
+
+Esto se hará con el comando [`vcoc`](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/vcov) que devuelve la matriz de covarianza de los parámetros ajustados. 
+
+$\hat{\beta}_1$ se corresponde a `nat` y $\hat{\beta}_2$
+se corresponde con `mortinf` luego mirando la respectiva fila y columna tenemos que 
+
+```{r}
+vcov(reg)
+```
+
+$$
+cov(\hat{\beta}_1, \hat{\beta}_2)
+=
+-0.0004865478
+$$
+
+Puesto que el resultado es cercano a $0$ podemos pensar que el signo de una es independiente del de la otra, es decir independientes. 
+
+Por lo tanto apriori no podríamos explicar una varia con la otra con un modelo lineal.
+
+
+## Calcula intervalos de confianza al nivel $90\%$ para todos los $\beta_i$ del modelo.
+
+Usaremos la función [`confint`](https://fhernanb.github.io/libro_regresion/ic.html)
+
+```{r}
+
+confint(reg, level=0.90)
+```
+esto nos proporciona un rango de incertidumbre en el que puede oscilar cada uno de los respectivos parámetros con 
+un $90 \%$ de probabilidad. 
+
+
+$$
+\beta_{0} \in [60.537, 71.365],
+$$
+$$
+\beta_{\text{ nat}} \in [-0.225 -0.067], 
+$$
+$$
+\beta_{\text{mortinf}} \in [-0.158, -0.108], 
+$$
+$$
+\beta_{\text{ log pnb }}  \in [0.396 , 1.493].
+$$
+
+Ya 
+$$
+P( \beta_{inf} \leq \beta \leq \beta_{sup}) = 1 - \alpha.
+$$
+Donde $\beta_{inf}$ y $\beta_{sup}$ son los elementos inferiores y superiores del intervalo. 
+
+Cuando mayor sea el intervalo más incertidumbre tendremos de la corrección del parámetro. 
+
+
+## Predice el valor de la esperanza de vida de los hombres en un país para el que el índice de natalidad es 29, la mortalidad infantil vale 50 y el logaritmo de su pnb vale 7. Calcula un intervalo de confianza del 95 % para el valor esperado de dicha variable.
+
+Para ello usaremos la función [`predict`](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/predict.lm)
+
+```{r}
+# Debemos de escribir el data frame con el nombre exacto 
+#bde las columnas con las que se creo el modelo de regresión.
+# Estas son:
+# nat     mortinf     log_pnb 
+new_data <- data.frame(
+  nat = 29,
+  mortinf = 50,
+  log_pnb = 7
+)
+# Realizamos la predicción 
+predict(reg, new_data, interval = "confidence", level = 0.95 )
+```
+Por lo tanto la esperanza de visa de los hombres de ese pais es de 61.6683 años. 
+El intervalo de confianza es de $[60.88761, 62.449]$ es decir valores sobre los que podría oscilar el valor
+con un $95 \%$ de confianza. 
+
+Además cabe mencionar que la predicción del intervalo se basa en que el error residual están distribuidos 
+bajo una distribución normal y varianza constante. Luego solo deberíamos de usar estos intervalos 
+si tuviéramos razones para pensar que se da esta condición. 
+
+
+\newpage
+# Ejercicio 4  
+
+Sean $Y_1, Y_2, Y_3$  tres variables aleatorias independientes con distribución normal y varianza 
+$\sigma^2$. Supongamos que $\mu$ es la media de 
+$Y_1$, 
+$\lambda$ es la media de $Y_2$,
+$\lambda + \mu$ es la media de $Y_3$, 
+donde  $\lambda, \mu \in \mathbb{R}$.
+
+## Apartado primero  
+
+Demuestra que el vector $Y = (Y_1, Y_2, Y_3)'$
+ verifica el modelo de regresión múltiple 
+ $$
+ Y = X \beta + \epsilon.
+ $$
+
+ Para ello, determina la matriz de diseño $X$,
+el vector de parámetros $\beta$
+ y la distribución de las variables de error $\epsilon$.
+
+**Solución**  
+
+$$
+X = 
+\begin{bmatrix}
+1 & 0 \\
+0 & 1 \\
+1 & 1 
+\end{bmatrix}
+$$
+
+$\beta = (\mu, \lambda)'$
+
+$\epsilon \sim \mathcal{N}((0, 0, 0)', \sigma^2 Id_3)$. 
+
+## Apartado 2
+
+Calcula los estimadores de máxima verosimilitud (equivalentemente, de mínimos cuadrados) de $\lambda$ y $\mu$. 
+
+**Solución** 
+
+Esto no sé justificarlo matemáticamente, pero teniendo en cuenta que
+el estimador máximo verosímil de la media de la normal es la media
+y que para estimador tenemos dos datos: 
+
+$$
+\lambda = \frac{Y_2 + (Y_3 - Y_1)}{2},
+$$
+
+$$
+\mu = \frac{Y_1 + (Y_3 - Y_2)}{2}.
+$$
+
+## Apartado 3 
+
+Calcula la distribución del vector  $(\hat \lambda, \hat \mu)'$,
+formado por los estimadores calculados en el apartado anterior.
+
+**Solución**
+
+La distribución de los estimadores viene dado por 
+
+$$
+\hat \beta \sim \mathcal{N}(\beta, \sigma^2 (X'X)^{-1})
+$$
+
+Por lo que 
+
+$$
+X' = 
+\begin{bmatrix}
+1 & 0 & 1 \\
+0 & 1 & 1 
+\end{bmatrix} .
+$$
+
+$$
+X'X = 
+\begin{bmatrix}
+2 & 1 \\
+1 & 2 \\
+\end{bmatrix}.
+$$
+
+Calculando la inversa por adjuntos resulta que 
+
+$$
+(X'X)^{-1} =
+\frac{1}{3} 
+\begin{bmatrix}
+2 & -1 \\
+-1 & 2
+\end{bmatrix}.
+$$
+
+Por lo que
+
+$$
+\hat \beta \sim \mathcal{N}
+\left(
+    \beta,
+     \sigma^2 \frac{1}{3} 
+        \begin{bmatrix}
+        2 & -1 \\
+        -1 & 2
+        \end{bmatrix}
+\right).
+$$  
+
+
+\newpage
+# Ejercicio 9 
+
+ Genera aleatoriamente una variable regresora 
+$X$ y un vector aleatorio $\epsilon$ de longitud 
+$n = 100$, con distribución normal estándar e independientes.
+
+Genera la variable respuesta de acuerdo con el modelo:
+$$
+Y = X + X^2 + X^3 + \epsilon. 
+$$
+```{r}
+library(purrr)
+library(ggplot2)
+library(ramify)
+```
+
+```{r}
+set.seed(1)
+n <- 100 
+X_distribution <- rnorm 
+error_distribution <- rnorm
+modelo_1 <- function (x) {
+  return (x + x^2 + x^3)
+}
+
+Y_distribution <- function (n, t){
+  x <- X_distribution(n)
+  e <- error_distribution(n)
+  return (sapply(x, t) + e)
+}
+
+
+Y_1 <- Y_distribution(n, modelo_1)
+```
+
+```{r}
+X <- X_distribution(n)
+# Generamos las potencias
+datos <- data.frame('X' = X)
+#datos[1] <- X
+for (i in 2:10) {
+  datos[i] <- datos[1]*datos[i-1]
+}
+
+# Modelo1 
+Y <- unlist(as.list(datos[1]+datos[2] + datos[3] + error_distribution(n)))
+datos$'Y' <- Y
+datos2 <- datos
+nombre_variables <- c('X1', 'X2',  'X3', 'X4', 'X5',
+                     'X6',  'X7', 'X8', 'X9', 'X10', 'y')
+colnames(datos) <- nombre_variables
+colnames(datos2) <- nombre_variables
+datos2$'Y_ideal' <- sapply(X, function(x)(x*(1 + x*(1 + x))))
+
+p <- ggplot(datos2) + 
+  geom_point( aes(X, Y), colour = 'black' ) +
+  geom_line(aes(X, Y_ideal), colour = 'red' ) +
+  ggtitle('Muestra ruidosa y función ideal')
+  
+p
+```
+
+##  Selecciona el modelo óptimo 
+
+Entre todos los submodelos que contienen como variables regresoras $X, X^2, X^3, \ldots, X^{10}$. 
+¿Cuál es el mejor modelo de acuerdo con los criterios $C_p$, BIC y $R_a^2$?
+
+**Solución** 
+
+Para poder realizar estas comparaciones utilizaremos la función [`leaps::regsubsets`](https://www.rdocumentation.org/packages/leaps/versions/3.1/topics/regsubsets). 
+
+Donde los argumentos que nos interesan son: 
+
+- `datos`  
+- `method` donde indicaremos de si se trata de `exhaustive` o `forward`.  
+- `nvmax` número máximo de subconjuntos a examinar, la pondremos al máximo de parámetros que tenemos.
+- `intercept` Si añadimos sesgo o no. 
+- `adjr2` para Adjusted r-squared. 
+- `cp` para Mallows's CP. 
+- `bic` para Schwartz's information criterion BIC. 
+
+Nodemos además que en el modelos que nos piden no hay término independiente 
+(ya que por el contrario habría añadido un `1` a las variables regresoras ),
+luego tendremos que hacer  `intercept = FALSE`. 
+
+```{R}
+subconjuntos_a_examinar <- 10
+modelo_exhaustivo <- leaps::regsubsets(
+  y ~ ., 
+  data=datos,
+  nvmax= subconjuntos_a_examinar, # para que utilice todos las componentes posibles,
+  intercept = FALSE
+  )
+
+resumen_1 <- summary(modelo_exhaustivo)
+resumen_1
+```
+
+```{r}
+# Función para pintar 
+pinta_ajuste <- function(y_criterio, label){
+  plot_data <- data.frame(
+    x = 1:subconjuntos_a_examinar,
+    y = y_criterio
+  )
+  print(plot_data)
+  y_label <- label
+  
+  plot(plot_data$x, plot_data$y, 
+       type = "l",
+       xlab = 'Número de variables',
+       ylab = y_label)
+}
+
+```
+
+### Mejor modelo de acorde a R cuadrado ajustado 
+
+```{r}
+pinta_ajuste(resumen_1$adjr2, "R2 ajustado")
+cat("Se alcanza el máximo con ", which.max(resumen_1$adjr2), "parametros")
+```
+Será mejor donde alcance un máximo, esto es en $p = 4$ es decir utilizando 4 parámetros. 
+Vamos a proceder a analizar los coeficientes. 
+
+```{r}
+# Mejores elementos
+#Selection Algorithm: exhaustive
+#         X1  X2  X3  X4  X5  X6  X7  X8  X9  X10
+#4  ( 1 )  "*" "*" "*" " " "*" " " " " " " " " " "
+
+modelo_r2_a <- lm(y ~ X1 + X2 + X3  + X5 -1, data=datos)
+summary(modelo_r2_a)
+
+y_predit_r2_a <- predict(object=modelo_r2_a, newdata=datos)
+
+datos2$'Y_r2a' <- y_predit_r2_a 
+
+p <- ggplot(datos2) + 
+  geom_point( aes(X1, Y), colour = 'black' ) +
+  geom_line(aes(X1, Y_ideal), colour = 'red' ) +
+  geom_line(aes(X1, Y_r2a), colour = 'green' )
+  
+p
+
+```
+
+Como vemos más variables lo que hacen es acercarse al ruido. 
+
+### Cp
+```{r}
+pinta_ajuste(resumen_1$cp, "Cp")
+cat("Con el criterio CP, el mejor modelo tiene ", which.min(resumen_1$cp), "parametros\n")
+
+```
+
+Vemos que con este criterio alcanza un mínimo en tres variables. 
+es decir que el mejor de los resultados sería 
+
+```
+Selection Algorithm: exhaustive
+         X1  X2  X3  X4  X5  X6  X7  X8  X9  X10
+3  ( 1 )  "*" "*" "*" " " " " " " " " " " " " " "
+```
+que si entrenamos obtendríamos
+
+```{r}
+modelo_cp<- lm(y ~ X1 + X2 + X3  -1, data=datos)
+summary(modelo_cp)
+
+y_predit_cp <- predict(object=modelo_cp, newdata=datos)
+
+datos2$'Y_cp' <- y_predit_cp 
+
+p <- ggplot(datos2) + 
+  geom_point( aes(X1, Y), colour = 'black' ) +
+  geom_line(aes(X1, Y_ideal), colour = 'red' ) +
+  geom_line(aes(X1, Y_cp), colour = 'green' )
+  
+p
+```
+### BIC 
+
+
+
+```{r}
+pinta_ajuste(resumen_1$bic, "Bic")
+
+cat("Con el criterio BIC, el mejor modelo tiene ", which.min(resumen_1$bic), "parametros\n")
+summary(modelo_exhaustivo)
+```
+```{r}
+modelo_bic<- lm(y ~ X1 + X2 + X3 -1, data=datos)
+summary(modelo_bic)
+
+y_predit_bic <- predict(object=modelo_bic, newdata=datos)
+
+datos2$'Y_bic' <- y_predit_bic 
+
+p <- ggplot(datos2) + 
+  geom_point( aes(X1, Y), colour = 'black' ) +
+  geom_line(aes(X1, Y_ideal), colour = 'red' ) +
+  geom_line(aes(X1, Y_bic), colour = 'green' )
+  
+p
+```
+## Usando ahora el método iterativo  
+
+```{R}
+
+modelo_iterativo_delante <- leaps::regsubsets(
+  y ~ ., 
+  data=datos, 
+  method = "forward",
+  nvmax = subconjuntos_a_examinar,
+  intercept = FALSE
+  )
+resumen_2 <- summary(modelo_iterativo_delante)
+resumen_2
+```
+Observaciones: 
+
+Como vemos ahora las variables seleccionadas para $p$ parámetros están incluidas 
+en el modelo con $p+1$ parámetros. Esto es lo esperado ya que es el comportamiento de forward 
+con el fin de mejorar el rendimiento. 
+
+
+### Mejor modelo de acorde a R cuadrado ajustado  con modelo iterativo hacia delante
+
+```{r}
+pinta_ajuste(resumen_2$adjr2, "R2 ajustado")
+cat("Se alcanza el máximo con ", which.max(resumen_2$adjr2), "parametros")
+```
+Será mejor donde alcance un máximo, esto es en $p = 8$ es decir utilizando 8 parámetros. 
+Vamos a proceder a analizar los coeficientes. 
+
+```{r}
+#          X1  X2  X3  X4  X5  X6  X7  X8  X9  X10
+#4  ( 1 )  "*" "*" "*" " " "*" " " " " " " " " " "
+
+
+modelo_r2_a <- lm(y ~ X1 + X2 + X3 +  X5 +-1, data=datos)
+summary(modelo_r2_a)
+
+y_predit_r2_a <- predict(object=modelo_r2_a, newdata=datos)
+
+datos2$'Y_r2a' <- y_predit_r2_a 
+
+p <- ggplot(datos2) + 
+  geom_point( aes(X1, Y), colour = 'black' ) +
+  geom_line(aes(X1, Y_ideal), colour = 'red' ) +
+  geom_line(aes(X1, Y_r2a), colour = 'green' )
+
+p
+```
+
+Como vemos más variables lo que hacen es acercarse al ruido. 
+El error `djusted R-squared:  0.968` coincide con el del criterio. 
+
+### Cp
+```{r}
+pinta_ajuste(resumen_2$cp, "Cp")
+cat("Con el criterio CP, el mejor modelo tiene ", which.min(resumen_2$cp), "parametros\n")
+summary(modelo_iterativo_delante)
+```
+
+Vemos que con este criterio alcanza un mínimo en tres variables. 
+
+
+```{r}
+modelo_cp<- lm(y ~ X1 + X2 + X3  -1, data=datos)
+summary(modelo_cp)
+
+y_predit_cp <- predict(object=modelo_cp, newdata=datos)
+
+datos2$'Y_cp' <- y_predit_cp 
+
+p <- ggplot(datos2) + 
+  geom_point( aes(X1, Y), colour = 'black' ) +
+  geom_line(aes(X1, Y_ideal), colour = 'red' ) +
+  geom_line(aes(X1, Y_cp), colour = 'green' )
+  
+p
+```
+### BIC 
+
+
+
+```{r}
+pinta_ajuste(resumen_2$bic, "Bic")
+
+cat("Con el criterio BIC, el mejor modelo tiene ", which.min(resumen_1$bic), "parametros\n")
+summary(modelo_iterativo_delante)
+```
+```{r}
+modelo_bic<- lm(y ~ X1 + X2 +  X3  -1, data=datos)
+summary(modelo_bic)
+
+y_predit_bic <- predict(object=modelo_bic, newdata=datos)
+
+datos2$'Y_bic' <- y_predit_bic 
+
+p <- ggplot(datos2) + 
+  geom_point( aes(X1, Y), colour = 'black' ) +
+  geom_line(aes(X1, Y_ideal), colour = 'red' ) +
+  geom_line(aes(X1, Y_bic), colour = 'green' )
+  
+p
+print('Los coefficientes del modelo son')
+coef(modelo_bic)
+```
+
+## Lasso 
+```{r}
+library(glmnet)
+x <- datos[c(1:10)]
+y <- datos$y
+modelo_lasso <- glmnet(x, y, alpha = 1, intercept=FALSE)   # alpha = 1 (lasso); alpha = 0 (ridge)
+plot(modelo_lasso, xvar='lambda', label=TRUE)
+coef(modelo_lasso, s = 0.1)
+#help(coef)
+```
+
+La ventaja que tiene lasso es que permite eliminar ciertos coeficientes esto queda de manifiesto en que la mayoría son nulos. 
+
+
+## Genera ahora las respuestas a partir del modelo 
+
+$$
+Y = X^7 + \epsilon.
+$$
+
+### Generación de los datos 
+```{r}
+# Generamos las potencias
+datos <- data.frame('1'=X)
+for (i in 2:10) {
+  datos[i] <- datos[1]*datos[i-1]
+}
+# Modelo1 
+Y <- unlist(
+  as.list(
+    datos[7] + error_distribution(n)
+  )
+)
+datos$'y' <- Y
+colnames(datos) <- nombre_variables
+```
+
+
+### Modelo óptimo dentro de submodelos  
+ 
+```{R}
+modelo_exhaustivo <- leaps::regsubsets(
+  y ~ ., 
+  data=datos,
+  nvmax = subconjuntos_a_examinar,
+  intercept = FALSE
+  )
+resumen_1 <- summary(modelo_exhaustivo)
+resumen_1
+```
+
+Vemos que ahora  a pesar de estar en un método exhaustivo, $X^7$ (el que sabemos que forma parte del modelo ideal)
+se encuentra en todos. 
+Esto puede entenderse como que al ser solo una *es más simple que la encuentre* y que no se compense con nada. 
+
+### Submodelos óptimos
+```{r}
+print("Submodelos óptimos")
+
+pinta_ajuste(resumen_1$adjr2, "R2 ajustado")
+cat("Se alcanza el máximo con ", which.max(resumen_1$adjr2), "parametros")
+
+pinta_ajuste(resumen_1$cp, "Cp")
+cat("Con el criterio CP, el mejor modelo tiene ", which.min(resumen_1$cp), "parametros\n")
+
+pinta_ajuste(resumen_1$bic, "Bic")
+
+cat("Con el criterio BIC, el mejor modelo tiene ", which.min(resumen_1$bic), "parametros\n")
+
+summary(modelo_exhaustivo)
+```
+
+### Submodelos utilizando un método iterativo 
+
+```{R}
+
+modelo_iterativo_delante <- leaps::regsubsets(
+  y ~ ., 
+  data=datos, 
+  method = "forward",
+  nvmax = subconjuntos_a_examinar,
+  intercept = FALSE
+  )
+resumen_2 <- summary(modelo_iterativo_delante)
+resumen_2
+```
+
+```{R}
+print("Submodelos utilizando el método iterativo \n")
+pinta_ajuste(resumen_2$adjr2, "R2 ajustado")
+cat("Se alcanza el máximo con ", which.max(resumen_2$adjr2), "parametros")
+
+pinta_ajuste(resumen_2$cp, "Cp")
+cat("Con el criterio CP, el mejor modelo tiene ", which.min(resumen_2$cp), "parametros\n")
+
+pinta_ajuste(resumen_2$bic, "Bic")
+
+cat("Con el criterio BIC, el mejor modelo tiene ", which.min(resumen_1$bic), "parametros\n")
+summary(modelo_iterativo_delante)
+```
+
+## Lasso 
+```{r}
+x <- datos[c(1:10)]
+
+y <- datos$y
+modelo_lasso <- glmnet(x, y, alpha = 1, intercept=FALSE)   # alpha = 1 (lasso); alpha = 0 (ridge)
+plot(modelo_lasso, xvar='lambda', label=TRUE)
+coef(modelo_lasso, s = 0.1)
+#help(coef)
+```
+
+### Conclusiones  
+
+A la vista de los resultados el modelo BIC es el más robusto a la hora de determinar el número de parámetros correcto. 
+Lasso es una alternativa razonable para reducir el número de variables y minimizar el error. 
+
+
+\newpage
+# Ejercicio 12  
+
+Se generan los siguientes dos conjuntos de datos: 
+
+```{r}
+library(purrr)
+library(ggplot2)
+```
+
+```{r}
+n <- 100
+sigma_1 <- 0.5
+sigma_2 <- 1
+
+fun_reg <- function (x) (x^2*sin(x))
+
+generator <- function (n, sigma) {
+  error <- rnorm(n)
+  unif <- runif(n, min = -pi, max = pi)
+  Y <- (
+    unif*unif
+    *
+    sapply(unif, sin)
+    +
+    sigma * error
+  )
+  
+  return (
+    data.frame(
+      X= unif,
+      Y = Y
+    )
+  )
+  
+}
+X_1 <- generator(n, sigma_1)
+X_2 <- generator(n, sigma_2)
+```
+
+## Representación gráfica  
+
+```{r}
+
+p <- ggplot(X_1) + 
+  geom_point( aes(X, Y), colour = 'black' )+
+  ggtitle('Datos con sigma = 0.5') +
+  geom_function(fun = 'fun_reg', linetype = 2)
+  
+q <- ggplot(X_2) + 
+  geom_point( aes(X, Y), colour = 'black' )+
+  ggtitle('Datos con sigma = 1') +
+  geom_function(fun = 'fun_reg', linetype = 2)
+p
+q
+```
+
+Puede verse como el sigma aumenta la dispersión respecto al eje Y.
+
+## Ajuste de regresión de mínimos cuadrados  
+
+Para cada conjunto de datos se pretende ajustar una regresión de mínimos cuadrados penalizada prefijando 
+uno de los grados de libertad efectivos. 
+
+## Representación gráfica del error de predicción de validación cruzada generalizando en función de los grados de liberta utilizados. 
+
+Imprimimos primero algunos ajustes: 
+```{r}
+pinta_spline <- function (X, grados_libertad){
+spline_1 <- smooth.spline(
+  X$X, X$Y, df = grados_libertad
+)
+datos <- data.frame(
+  x = X$X,
+  y = X$Y,
+  xfit = spline_1$x,
+  yfit = spline_1$y
+)
+
+titulo <- paste('Spline con df = ', grados_libertad)
+ggplot(datos) +
+  geom_point(aes(x, y)) + 
+  geom_line(aes(xfit, yfit), color="blue", size = 1.1) +
+  geom_function(fun = 'fun_reg', linetype = 2) +
+  ggtitle(titulo) 
+}
+
+for( df in c(2,7,10, 25) ){
+  print(pinta_spline(X_1, df))
+}
+
+```
+Bajo una inspección visual puede verse que a  mayor número de grados de libertad mejor es el ajuste a los datos utilizados en regresión c, procedamos a constatarlo 
+
+```{r}
+cv_error <- function (X, grados_libertad){
+  spline_1 <- smooth.spline(
+    X$X, X$Y, df = grados_libertad
+  )
+  return (spline_1$cv.crit)
+}
+
+df <- c(3:25)
+datos <- data.frame(
+  x = df,
+  y1 = sapply(df, function(d)(cv_error(X_1, d))),
+  y2 = sapply(df, function(d)(cv_error(X_2, d)))
+) 
+
+ggplot(datos) +
+  geom_line(aes(x, y1, color="sigma = 0.5"), size = 1.1) +
+  geom_line(aes(x, y2, color="sigma = 1") , size = 1.1) +
+  labs(title = 'Error y grados de libertad',
+       x = 'Grados de libertad',
+       y = 'Error de validación cruzada en predicción')
+
+cat("Pasa sigma = 0.5 alcanza un mínimo en ", datos$x[which.min(datos$y1)], " grados de libertad.\n")
+cat("Pasa sigma = 1 alcanza un mínimo en ", datos$x[which.min(datos$y2)], " grados de libertad.\n")
+```
+
+
+## Comentario de los resultados
+
+Hay varios fenómenos llamativos al observa esta gráfica: 
+1. Comportamiento general: Decrece, alcanza un mínimo y vuelve a crecer en menor medida. 
+2. El que los dos gráficos parezcan más o menos desplazados.
+3. Que $\sigma$ menor admita más grados de libertad antes de volver a crecer el error. 
+4. Que la gráfica de $\sigma = 1$ comience a crecer más que la $\sigma = 0.5$. 
+
+Todos estos fenómenos se pueden explicar con la relación entre los errores vista en teoría: 
+
+$$
+\text{Error}_{Test}
+= 
+\text{Error}_{Training}
++ 
+\frac{2 \sigma^2}{n} \text{grados de libertad}. 
+$$
+(Notemos que grados de libertad se corresponde a la traza de la matriz $M$, que en nuestro caso particular se trata de los mínimos cuadrados)
+
+### Comportamiento general: Decrecemiento, mínimo y crecimiento más lento 
+Como rasgo general podemos observar como añadir más grados de libertad mejora el ajuste a los datos de *aprendizaje*,
+el error de *training* está decreciendo en mayor medida que el aumento de grados de libertad. 
+A partir de 10 (o 13 si $\sigma = 1$) grados puede verse cómo el error de test comienza a crecer de nuevo,
+este fenómeno conocido como *sobreajuste a los datos de entrenamiento* no es más que el error de training se disminuye en menor proporción que el peso que suma el término $\frac{2 \sigma^2}{n} \text{grados de libertad}$.
+
+### Gráficos desplazados  
+
+Esto está motivado por que los *datos training* de uno es mayor que la de otro. Este fenómenos es natural,
+ya que por la propia naturaleza de los datos sabemos que los datos de $\sigma = 1$ (la gráfica con mayor error)
+posee un ruido mayor (concretamente el de $\mathcal{N}(0,1)$)
+
+### A $\sigma$ menor admita más grados de libertad antes de volver a crecer el error.  
+
+Relacionado con lo anterior, si el *ruido* es menor será más similar a su desarrollo de Taylor admitiendo por tanto desarrollar más términos de la serie de Taylor (grados de libertad en nuestro caso). 
+
+
+###  Crecimiento mayor del error de $\sigma = 1$ frente a  $\sigma = 0.5$  
+
+Esto es claro resultado del segundo sumando de la relación mostrada: 
+
+$$
+\frac{2 \sigma^2}{n} \text{grados de libertad}
+$$
+ya que en ambos caso $n$ y *grados de libertad* son iguales y solo difiere el valor de $\sigma$.
+
+

@@ -7,6 +7,7 @@ toc: true
 toc-depth: 3
 lang: es
 ---  
+\newpage 
 
 # Ejercicio 5  
 
@@ -69,7 +70,6 @@ table(data$clases, predictions)
 riesgo_empirico <-mean(data$clases !=  predictions)
 cat('El riesgo empírico es de ', riesgo_empirico)
 ```
-Además de que esa
 
 ### Tasa de error por validación cruzada 
 
@@ -97,10 +97,12 @@ $$
 
 Los vectores de medias vendrán dados por: 
 
+```
 Group means:
   Sepal.Length Sepal.Width
 0        5.936       2.770
 1        6.588       2.974
+```
 
 ```{r}
 mu_0 <- c( 5.936, 2.770)
@@ -139,11 +141,22 @@ S_inv <- inv(S)
 delta_2 <- diference %*%  S_inv %*% matrix(diference)
 delta <- sqrt(delta_2[1,1])
 
-error <- 1 - dnorm(delta/2)
+error <- 1 - pnorm(delta/2)
 
 cat("EL error Bayes es ",error)
 
 ```
+
+A la vista de los resultados puede un pensar que se está violando 
+la propocisión vista en clase de que **la regla de Bayes es la regla óptima**, 
+ya que los errores obtenidos son inferiores al error de Bayes. 
+
+Sin embargo esta contradicción proviene de la imprecisión introducida
+en la estimación de los parámetros, ya sea en la matriz de covarianza 
+como en las medias. 
+
+Además siempre hay que tener presente que estamos tratando con un conjunto de 
+muestra (y en este caso relativamente pequeño) no con la población en su totalidad. 
 
 ## Repetición del apartado anterior pero considerando las cuatro variables  
 
@@ -202,12 +215,12 @@ S <- (
   (n_1 - 1)*S_1
 )/(n_0 + n_1 - 2)
 
-
+#equivale a: delta <- mahalanobis(mu_0, mu_1, S)
 S_inv <- inv(S)
 delta_2 <- diference %*%  S_inv %*% matrix(diference)
 delta <- sqrt(delta_2[1,1])
 
-error <- 1 - dnorm(delta/2)
+error <- 1 - pnorm(delta/2)
 
 cat("EL error Bayes es ",error)
 ```

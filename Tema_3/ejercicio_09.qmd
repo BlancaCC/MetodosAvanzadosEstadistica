@@ -15,6 +15,7 @@ library(ramify)
 ```
 
 ```{r}
+set.seed(1)
 n <- 100 
 X_distribution <- rnorm 
 error_distribution <- rnorm
@@ -35,51 +36,60 @@ Y_1 <- Y_distribution(n, modelo_1)
 ```{r}
 X <- X_distribution(n)
 # Generamos las potencias
-datos <- data.frame('1'=X)
+datos <- data.frame('X' = X)
+#datos[1] <- X
 for (i in 2:10) {
   datos[i] <- datos[1]*datos[i-1]
 }
+
 # Modelo1 
 Y <- unlist(as.list(datos[1]+datos[2] + datos[3] + error_distribution(n)))
-datos$'y' <- Y
-#datos
+datos$'Y' <- Y
 datos2 <- datos
-#plot(X, Y, type='p')
-
+nombre_variables <- c('X1', 'X2',  'X3', 'X4', 'X5',
+                     'X6',  'X7', 'X8', 'X9', 'X10', 'y')
+colnames(datos) <- nombre_variables
+colnames(datos2) <- nombre_variables
 datos2$'Y_ideal' <- sapply(X, function(x)(x*(1 + x*(1 + x))))
 
 p <- ggplot(datos2) + 
-  geom_point( aes(X1, Y), colour = 'black' ) +
-  geom_line(aes(X1, Y_ideal), colour = 'red' ) 
+  geom_point( aes(X, Y), colour = 'black' ) +
+  geom_line(aes(X, Y_ideal), colour = 'red' ) +
+  ggtitle('Muestra ruidosa y función ideal')
   
-
 p
 ```
 
-##  Selecciona el modelo óptimo   
-entre todos los submodelos que contienen como variables regresoras $X, X^2, X^3, \ldots, X^{10}$. 
+##  Selecciona el modelo óptimo 
+
+Entre todos los submodelos que contienen como variables regresoras $X, X^2, X^3, \ldots, X^{10}$. 
 ¿Cuál es el mejor modelo de acuerdo con los criterios $C_p$, BIC y $R_a^2$?
 
 **Solución** 
+
 Para poder realizar estas comparaciones utilizaremos la función [`leaps::regsubsets`](https://www.rdocumentation.org/packages/leaps/versions/3.1/topics/regsubsets). 
 
 Donde los argumentos que nos interesan son: 
-- `datos`
-- `method` donde indicaremos de si se trata de `exhaustive` o `forward`.
+
+- `datos`  
+- `method` donde indicaremos de si se trata de `exhaustive` o `forward`.  
 - `nvmax` número máximo de subconjuntos a examinar, la pondremos al máximo de parámetros que tenemos.
-maximum size of subsets to examine
-
-
+- `intercept` Si añadimos sesgo o no. 
 - `adjr2` para Adjusted r-squared. 
 - `cp` para Mallows's CP. 
 - `bic` para Schwartz's information criterion BIC. 
+
+Nodemos además que en el modelos que nos piden no hay término independiente 
+(ya que por el contrario habría añadido un `1` a las variables regresoras ),
+luego tendremos que hacer  `intercept = FALSE`. 
 
 ```{R}
 subconjuntos_a_examinar <- 10
 modelo_exhaustivo <- leaps::regsubsets(
   y ~ ., 
   data=datos,
-  nvmax= subconjuntos_a_examinar # para que utilice todos las componentes posibles
+  nvmax= subconjuntos_a_examinar, # para que utilice todos las componentes posibles,
+  intercept = FALSE
   )
 
 resumen_1 <- summary(modelo_exhaustivo)
@@ -87,6 +97,7 @@ resumen_1
 ```
 
 ```{r}
+# Función para pintar 
 pinta_ajuste <- function(y_criterio, label){
   plot_data <- data.frame(
     x = 1:subconjuntos_a_examinar,
@@ -95,12 +106,10 @@ pinta_ajuste <- function(y_criterio, label){
   print(plot_data)
   y_label <- label
   
-  ggp <- ggplot(plot_data, aes(x, y)) +    # ggplot2 plot with default grid
-    geom_line()
-  ggp + 
-    xlab("Número de variables") +
-    ylab(y_label) #+
-    #scale_y_continuous(minor_breaks = seq(0, 10, 0.005))
+  plot(plot_data$x, plot_data$y, 
+       type = "l",
+       xlab = 'Número de variables',
+       ylab = y_label)
 }
 
 ```
@@ -111,15 +120,16 @@ pinta_ajuste <- function(y_criterio, label){
 pinta_ajuste(resumen_1$adjr2, "R2 ajustado")
 cat("Se alcanza el máximo con ", which.max(resumen_1$adjr2), "parametros")
 ```
-Será mejor donde alcance un máximo, esto es en $p = 8$ es decir utilizando 8 parámetros. 
+Será mejor donde alcance un máximo, esto es en $p = 4$ es decir utilizando 4 parámetros. 
 Vamos a proceder a analizar los coeficientes. 
 
 ```{r}
 # Mejores elementos
-#  X1  X1.1 X1.2 X1.3 X1.4 X1.5 X1.6 X1.7 X1.8 X1.9
-#7  ( 1 ) " " "*"  "*"  " "  "*"  " "  "*"  "*"  "*"  "*" 
+#Selection Algorithm: exhaustive
+#         X1  X2  X3  X4  X5  X6  X7  X8  X9  X10
+#4  ( 1 )  "*" "*" "*" " " "*" " " " " " " " " " "
 
-modelo_r2_a <- lm(y ~ X1.1 + X1.2+ X1.3  + X1.5 + X1.6 + X1.7 + X1.8+ X1.9 -1, data=datos)
+modelo_r2_a <- lm(y ~ X1 + X2 + X3  + X5 -1, data=datos)
 summary(modelo_r2_a)
 
 y_predit_r2_a <- predict(object=modelo_r2_a, newdata=datos)
@@ -131,7 +141,6 @@ p <- ggplot(datos2) +
   geom_line(aes(X1, Y_ideal), colour = 'red' ) +
   geom_line(aes(X1, Y_r2a), colour = 'green' )
   
-
 p
 
 ```
@@ -142,21 +151,21 @@ Como vemos más variables lo que hacen es acercarse al ruido.
 ```{r}
 pinta_ajuste(resumen_1$cp, "Cp")
 cat("Con el criterio CP, el mejor modelo tiene ", which.min(resumen_1$cp), "parametros\n")
-summary(modelo_exhaustivo)
+
 ```
 
-Vemos que con este criterio alcanza un mínimo en cinco variables. 
+Vemos que con este criterio alcanza un mínimo en tres variables. 
 es decir que el mejor de los resultados sería 
 
 ```
 Selection Algorithm: exhaustive
-         X1  X1.1 X1.2 X1.3 X1.4 X1.5 X1.6 X1.7 X1.8 X1.9
-6  ( 1 ) " " " "  "*"  "*"  "*"  "*"  " "  "*"  " "  "*" 
+         X1  X2  X3  X4  X5  X6  X7  X8  X9  X10
+3  ( 1 )  "*" "*" "*" " " " " " " " " " " " " " "
 ```
 que si entrenamos obtendríamos
 
 ```{r}
-modelo_cp<- lm(y ~ X1.2 + X1.3 + X1.4 + X1.5 + X1.7  + X1.9 -1, data=datos)
+modelo_cp<- lm(y ~ X1 + X2 + X3  -1, data=datos)
 summary(modelo_cp)
 
 y_predit_cp <- predict(object=modelo_cp, newdata=datos)
@@ -181,7 +190,7 @@ cat("Con el criterio BIC, el mejor modelo tiene ", which.min(resumen_1$bic), "pa
 summary(modelo_exhaustivo)
 ```
 ```{r}
-modelo_bic<- lm(y ~ X1 + X1.2 + X1.3 -1, data=datos)
+modelo_bic<- lm(y ~ X1 + X2 + X3 -1, data=datos)
 summary(modelo_bic)
 
 y_predit_bic <- predict(object=modelo_bic, newdata=datos)
@@ -203,7 +212,8 @@ modelo_iterativo_delante <- leaps::regsubsets(
   y ~ ., 
   data=datos, 
   method = "forward",
-  nvmax = subconjuntos_a_examinar
+  nvmax = subconjuntos_a_examinar,
+  intercept = FALSE
   )
 resumen_2 <- summary(modelo_iterativo_delante)
 resumen_2
@@ -215,25 +225,6 @@ en el modelo con $p+1$ parámetros. Esto es lo esperado ya que es el comportamie
 con el fin de mejorar el rendimiento. 
 
 
-```
-pinta_ajuste <- function(y_criterio, label){
-  plot_data <- data.frame(
-    x = 1:8,
-    y = y_criterio
-  )
-  print(plot_data)
-  y_label <- label
-  
-  ggp <- ggplot(plot_data, aes(x, y)) +    # ggplot2 plot with default grid
-    geom_line()
-  ggp + 
-    xlab("Número de variables") +
-    ylab(y_label) #+
-    #scale_y_continuous(minor_breaks = seq(0, 10, 0.005))
-}
-
-```
-
 ### Mejor modelo de acorde a R cuadrado ajustado  con modelo iterativo hacia delante
 
 ```{r}
@@ -244,11 +235,11 @@ Será mejor donde alcance un máximo, esto es en $p = 8$ es decir utilizando 8 p
 Vamos a proceder a analizar los coeficientes. 
 
 ```{r}
-#         X1  X1.1 X1.2 X1.3 X1.4 X1.5 X1.6 X1.7 X1.8 X1.9
-#8  ( 1 ) "*" "*"  "*"  "*"  "*"  "*"  " "  "*"  " "  "*" 
+#          X1  X2  X3  X4  X5  X6  X7  X8  X9  X10
+#4  ( 1 )  "*" "*" "*" " " "*" " " " " " " " " " "
 
 
-modelo_r2_a <- lm(y ~ X1 + X1.1 + X1.2 + X1.3 + X1.4+ X1.5 + X1.7 + X1.9 -1, data=datos)
+modelo_r2_a <- lm(y ~ X1 + X2 + X3 +  X5 +-1, data=datos)
 summary(modelo_r2_a)
 
 y_predit_r2_a <- predict(object=modelo_r2_a, newdata=datos)
@@ -259,13 +250,12 @@ p <- ggplot(datos2) +
   geom_point( aes(X1, Y), colour = 'black' ) +
   geom_line(aes(X1, Y_ideal), colour = 'red' ) +
   geom_line(aes(X1, Y_r2a), colour = 'green' )
-  
 
 p
-
 ```
 
 Como vemos más variables lo que hacen es acercarse al ruido. 
+El error `djusted R-squared:  0.968` coincide con el del criterio. 
 
 ### Cp
 ```{r}
@@ -274,18 +264,11 @@ cat("Con el criterio CP, el mejor modelo tiene ", which.min(resumen_2$cp), "para
 summary(modelo_iterativo_delante)
 ```
 
-Vemos que con este criterio alcanza un mínimo en cinco variables. 
-es decir que el mejor de los resultados sería 
+Vemos que con este criterio alcanza un mínimo en tres variables. 
 
-```
-Selection Algorithm: exhaustive
-         X1  X1.1 X1.2 X1.3 X1.4 X1.5 X1.6 X1.7 X1.8 X1.9
-6  ( 1 ) " " " "  "*"  "*"  "*"  "*"  " "  "*"  " "  "*" 
-```
-que si entrenamos obtendríamos
 
 ```{r}
-modelo_cp<- lm(y ~ X1.2 + X1.3 + X1.4 + X1.5 + X1.7  + X1.9 -1, data=datos)
+modelo_cp<- lm(y ~ X1 + X2 + X3  -1, data=datos)
 summary(modelo_cp)
 
 y_predit_cp <- predict(object=modelo_cp, newdata=datos)
@@ -310,7 +293,7 @@ cat("Con el criterio BIC, el mejor modelo tiene ", which.min(resumen_1$bic), "pa
 summary(modelo_iterativo_delante)
 ```
 ```{r}
-modelo_bic<- lm(y ~ X1 + X1.1 +  X1.2  -1, data=datos)
+modelo_bic<- lm(y ~ X1 + X2 +  X3  -1, data=datos)
 summary(modelo_bic)
 
 y_predit_bic <- predict(object=modelo_bic, newdata=datos)
@@ -326,6 +309,7 @@ p
 print('Los coefficientes del modelo son')
 coef(modelo_bic)
 ```
+
 ## Lasso 
 ```{r}
 library(glmnet)
@@ -360,6 +344,7 @@ Y <- unlist(
   )
 )
 datos$'y' <- Y
+colnames(datos) <- nombre_variables
 ```
 
 
@@ -369,7 +354,8 @@ datos$'y' <- Y
 modelo_exhaustivo <- leaps::regsubsets(
   y ~ ., 
   data=datos,
-  nvmax = subconjuntos_a_examinar
+  nvmax = subconjuntos_a_examinar,
+  intercept = FALSE
   )
 resumen_1 <- summary(modelo_exhaustivo)
 resumen_1
@@ -404,7 +390,8 @@ modelo_iterativo_delante <- leaps::regsubsets(
   y ~ ., 
   data=datos, 
   method = "forward",
-  nvmax = subconjuntos_a_examinar
+  nvmax = subconjuntos_a_examinar,
+  intercept = FALSE
   )
 resumen_2 <- summary(modelo_iterativo_delante)
 resumen_2
@@ -434,4 +421,9 @@ plot(modelo_lasso, xvar='lambda', label=TRUE)
 coef(modelo_lasso, s = 0.1)
 #help(coef)
 ```
+
+### Conclusiones  
+
+A la vista de los resultados el modelo BIC es el más robusto a la hora de determinar el número de parámetros correcto. 
+Lasso es una alternativa razonable para reducir el número de variables y minimizar el error. 
 
